@@ -88,10 +88,10 @@
 
                 <!-- Acciones -->
                 <div class="flex items-center gap-1 opacity-75 ml-auto shrink-0">
-                    <button (click)="copyToClipboard()" title="Copiar mensaje" class="btn-icon">
+                    <button (click)="copyToClipboard()" title="Copiar mensaje" class="btn-icon" aria-label="Copiar mensaje">
                         <svg lucideCopy class="w-3.5 h-3.5"></svg>
                     </button>
-                    <button (click)="onDelete.emit(msg().id)" title="Eliminar mensaje" class="btn-icon">
+                    <button (click)="onDelete.emit(msg().id)" title="Eliminar mensaje" class="btn-icon" aria-label="Eliminar mensaje">
                         <svg lucideTrash2 class="w-3.5 h-3.5"></svg>
                     </button>
                 </div>

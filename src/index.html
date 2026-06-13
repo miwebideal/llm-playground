@@ -5,22 +5,30 @@
 
 <head>
   <meta charset="utf-8">
-  <title>LLM Playground | miwebideal</title>
+  <title>LLM Playground | MiWebIdeal</title>
   <meta name="description"
-    content="LLM Playground por miwebideal. Un entorno minimalista y rápido para probar modelos de IA. Configura tu API Key y comenzá a chatear.">
+    content="LLM Playground por MiWebIdeal. Un entorno minimalista y rápido para probar modelos de IA. Configura tu API Key y comenzá a chatear.">
 
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <meta name="robots" content="noindex, nofollow">
+  <meta name="robots" content="index, follow">
 
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="preload" as="style"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || !localStorage.getItem('theme')) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+
 </head>
 
 <body>
