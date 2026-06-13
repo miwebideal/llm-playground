@@ -1,6 +1,6 @@
 {
-  "name": "llm-tester",
-  "version": "0.0.0",
+  "name": "llm-playground",
+  "version": "1.0.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -17,6 +17,9 @@
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@lucide/angular": "^1.18.0",
+    "@tailwindcss/typography": "^0.5.20",
+    "marked": "^18.0.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

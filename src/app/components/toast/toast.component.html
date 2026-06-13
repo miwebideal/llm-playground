@@ -1,0 +1,23 @@
+<!-- src/app/components/toast/toast.component.html -->
+
+<div class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+    @for (toast of toastService.toasts(); track toast.id) {
+    <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 animate-fade-in"
+        [ngClass]="getToastClasses(toast.type)">
+
+        <!-- Icono según el tipo -->
+        @switch (toast.type) {
+        @case ('success') { <svg lucideCheckCheck class="w-5 h-5"></svg> }
+        @case ('error') { <svg lucideAlertCircle class="w-5 h-5"></svg> }
+        @case ('warning') { <svg lucideAlertTriangle class="w-5 h-5"></svg> }
+        @case ('info') { <svg lucideInfo class="w-5 h-5"></svg> }
+        }
+
+        <span class="text-xs md:text-sm font-medium">{{ toast.message }}</span>
+
+        <button (click)="toastService.remove(toast.id)" class="ml-2 opacity-70 hover:opacity-100 transition-opacity">
+            <svg lucideX class="w-4 h-4"></svg>
+        </button>
+    </div>
+    }
+</div>

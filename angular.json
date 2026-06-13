@@ -6,7 +6,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "llm-tester": {
+    "llm-playground": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -56,10 +56,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "llm-tester:build:production"
+              "buildTarget": "llm-playground:build:production"
             },
             "development": {
-              "buildTarget": "llm-tester:build:development"
+              "buildTarget": "llm-playground:build:development"
             }
           },
           "defaultConfiguration": "development"

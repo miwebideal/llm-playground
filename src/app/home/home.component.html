@@ -1,0 +1,148 @@
+<!-- src/app/home/home.component.html -->
+
+<div
+    class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden transition-colors">
+
+    <app-header (toggleConfig)="configOpen.set(!configOpen())" (exportChat)="onExportChat()"></app-header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- SIDEBAR MODULAR -->
+        <div class="fixed lg:static inset-y-0 left-0 z-30 w-80 lg:w-80 shrink-0 transition-transform duration-300 ease-in-out will-change-transform"
+            [class.-translate-x-full]="!configOpen()" [class.translate-x-0]="configOpen()"
+            [class.lg:translate-x-0]="true">
+            <app-sidebar [isOpen]="configOpen()" (closeSidebar)="configOpen.set(false)"></app-sidebar>
+        </div>
+
+        <!-- Overlay móvil -->
+        @if (configOpen()) {
+        <div (click)="configOpen.set(false)"
+            class="lg:hidden fixed inset-0 bg-black/50 z-20 backdrop-blur-xs transition-opacity duration-300"></div>
+        }
+
+        <!-- CHAT AREA -->
+        <main class="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-950 relative transition-colors">
+
+            <!-- Messages -->
+            <div #messagesContainer class="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth">
+
+                @if (messages().length === 0) {
+                <div
+                    class="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-600 space-y-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                        <svg lucideMessageSquare class="w-8 h-8"></svg>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-lg font-medium text-gray-700 dark:text-gray-500">Comienza una conversación</p>
+                        <p class="text-sm mt-1">Configura tu API y empieza a probar modelos</p>
+                    </div>
+                </div>
+                }
+
+                @for (msg of messages(); track msg.id) {
+                <app-chat-message [msg]="msg" (onDelete)="deleteMessage($event)">
+                </app-chat-message>
+                }
+            </div>
+
+            <!-- Input Area -->
+            <div
+                class="border-t border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur p-4 shrink-0 transition-colors">
+                <div class="max-w-4xl mx-auto space-y-3">
+
+                    <!-- Toolbar -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span
+                                [class]="config().includeHistory ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-600'"
+                                class="text-xs font-medium flex items-center gap-1">
+                                <svg lucideHistory class="w-3 h-3"></svg>
+                                Historial {{ config().includeHistory ? 'ON' : 'OFF' }}
+                            </span>
+                            <span
+                                [class]="config().streamMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-600'"
+                                class="text-xs font-medium flex items-center gap-1">
+                                <svg lucideActivity class="w-3 h-3"></svg>
+                                Stream {{ config().streamMode ? 'ON' : 'OFF' }}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            @if (canRegenerate()) {
+                            <button (click)="regenerateLast()"
+                                class="text-xs text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 hover:cursor-pointer"
+                                title="Regenerar última respuesta">
+                                <svg lucideRotateCcw class="w-3 h-3"></svg>
+                                Regenerar
+                            </button>
+                            }
+                            @if (messages().length > 0) {
+                            <button (click)="clearMessages()"
+                                class="text-xs text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-1 hover:cursor-pointer">
+                                <svg lucideTrash class="w-3 h-3"></svg>
+                                Limpiar chat
+                            </button>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Input -->
+                    <div
+                        class="relative flex flex-col w-full bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl focus-within:ring-2 focus-within:ring-violet-500 focus-within:border-transparent transition-all">
+
+                        <div class="flex items-start">
+                            <textarea #messageInput [value]="userInput()"
+                                (input)="userInput.set($any($event).target.value); adjustHeight(messageInput)"
+                                autocomplete="off" (keydown)="onKeydown($event)" rows="1"
+                                placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
+                                class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-32 overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"></textarea>
+
+                            <div class="p-2 pt-3">
+                                @if (isLoading()) {
+                                <div class="flex items-center gap-1">
+                                    <button (click)="stopGenerating()"
+                                        class="p-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors"
+                                        title="Detener generación">
+                                        <svg lucideSquare class="w-4 h-4"></svg>
+                                    </button>
+                                    <button (click)="cancelRequest()"
+                                        class="p-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors animate-pulse"
+                                        title="Cancelar">
+                                        <svg lucideX class="w-4 h-4"></svg>
+                                    </button>
+                                </div>
+                                } @else {
+                                <button (click)="sendMessage()" [disabled]="!userInput().trim()"
+                                    class="p-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white transition-colors"
+                                    title="Enviar">
+                                    <svg lucideSendHorizontal class="w-4 h-4"></svg>
+                                </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Footer con contador -->
+                        <div class="flex items-center justify-between px-4 pb-2 pt-0">
+                            <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 select-none">
+                                @if (userInput().length > 0) {
+                                {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{
+                                contextTokens() }} tokens
+                                } @else {
+                                Shift+Enter nueva línea · Ctrl+K limpiar
+                                }
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Warning -->
+                    @if (!hasConfig()) {
+                    <p class="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1">
+                        <svg lucideCircleAlert class="w-3 h-3"></svg>
+                        Configura la URL, token y modelo en el panel lateral para empezar
+                    </p>
+                    }
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
