@@ -1,7 +1,7 @@
 <!-- src/app/home/home.component.html -->
 
 <div
-    class="h-screen flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden transition-colors">
+    class="h-dvh flex flex-col bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden transition-colors">
 
     <app-header (toggleConfig)="configOpen.set(!configOpen())" (exportChat)="onExportChat()"></app-header>
 
@@ -28,12 +28,14 @@
 
                 @if (messages().length === 0) {
                 <div
-                    class="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-600 space-y-4">
+                    class="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 space-y-4">
+
+
                     <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
                         <svg lucideMessageSquare class="w-8 h-8"></svg>
                     </div>
                     <div class="text-center">
-                        <p class="text-lg font-medium text-gray-700 dark:text-gray-500">Comienza una conversación</p>
+                        <p class="text-lg font-medium text-gray-700 dark:text-gray-300">Comienza una conversación</p>
                         <p class="text-sm mt-1">Configura tu API y empieza a probar modelos</p>
                     </div>
                 </div>
@@ -54,19 +56,18 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <span
-                                [class]="config().includeHistory ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400 dark:text-gray-600'"
+                                [class]="config().includeHistory ? 'text-violet-600 dark:text-violet-400' : 'text-gray-500 dark:text-gray-400'"
                                 class="text-xs font-medium flex items-center gap-1">
                                 <svg lucideHistory class="w-3 h-3"></svg>
                                 Historial {{ config().includeHistory ? 'ON' : 'OFF' }}
                             </span>
                             <span
-                                [class]="config().streamMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400 dark:text-gray-600'"
+                                [class]="config().streamMode ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'"
                                 class="text-xs font-medium flex items-center gap-1">
                                 <svg lucideActivity class="w-3 h-3"></svg>
                                 Stream {{ config().streamMode ? 'ON' : 'OFF' }}
                             </span>
                         </div>
-
                         <div class="flex items-center gap-2">
                             @if (canRegenerate()) {
                             <button (click)="regenerateLast()"
@@ -95,6 +96,7 @@
                                 (input)="userInput.set($any($event).target.value); adjustHeight(messageInput)"
                                 autocomplete="off" (keydown)="onKeydown($event)" rows="1"
                                 placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
+                                aria-label="Escribe tu mensaje"
                                 class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-32 overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"></textarea>
 
                             <div class="p-2 pt-3">
@@ -107,14 +109,14 @@
                                     </button>
                                     <button (click)="cancelRequest()"
                                         class="p-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors animate-pulse"
-                                        title="Cancelar">
+                                        title="Cancelar" aria-label="Detener generación">
                                         <svg lucideX class="w-4 h-4"></svg>
                                     </button>
                                 </div>
                                 } @else {
                                 <button (click)="sendMessage()" [disabled]="!userInput().trim()"
                                     class="p-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 text-white transition-colors"
-                                    title="Enviar">
+                                    title="Enviar" aria-label="Enviar mensaje">
                                     <svg lucideSendHorizontal class="w-4 h-4"></svg>
                                 </button>
                                 }
@@ -123,7 +125,7 @@
 
                         <!-- Footer con contador -->
                         <div class="flex items-center justify-between px-4 pb-2 pt-0">
-                            <span class="text-[10px] font-medium text-gray-400 dark:text-gray-500 select-none">
+                            <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 select-none">
                                 @if (userInput().length > 0) {
                                 {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{
                                 contextTokens() }} tokens
@@ -132,6 +134,7 @@
                                 }
                             </span>
                         </div>
+
                     </div>
 
                     <!-- Warning -->

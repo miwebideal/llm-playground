@@ -78,24 +78,16 @@ export class HomeComponent {
         });
 
         effect(() => {
-            const msgs = this.messagesStore.state();
-            const currentCount = msgs.length;
-            const hasNewMessage = currentCount !== this.lastMessageCount;
-            this.lastMessageCount = currentCount;
-
-            if (hasNewMessage) {
-                this.scrollToBottom();
-            }
+            this.messagesStore.state();
+            setTimeout(() => this.scrollToBottom(), 50);
         });
     }
 
     private scrollToBottom() {
         const container = this.messagesContainerRef()?.nativeElement;
-        if (!container) return;
-
-        requestAnimationFrame(() => {
-            container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-        });
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
     }
 
     adjustHeight(el: HTMLTextAreaElement) {

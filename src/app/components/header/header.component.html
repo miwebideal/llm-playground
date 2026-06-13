@@ -9,14 +9,14 @@
         </div>
         <div>
             <h1 class="font-bold text-lg leading-tight text-gray-900 dark:text-white">LLM Playground</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Local AI Model Tester</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">AI Model Tester</p>
         </div>
     </div>
 
     <div class="flex items-center gap-1 sm:gap-2">
         <!-- Theme toggle -->
         <button (click)="theme.toggle()" class="btn-icon flex items-center gap-1.5 hover:cursor-pointer"
-            title="Alternar tema">
+            title="Alternar tema" aria-label="Alternar tema">
             @if (theme.isDark()) {
             <svg lucideSun class="w-5 h-5"></svg>
             <span class="hidden md:inline text-xs font-medium">Light</span>
@@ -28,14 +28,15 @@
 
         <!-- Exportar -->
         <button (click)="exportChat.emit()" class="btn-icon flex items-center gap-1.5 hover:cursor-pointer"
-            title="Exportar conversación">
+            title="Exportar conversación" aria-label="Exportar conversación">
             <svg lucideDownload class="w-5 h-5"></svg>
             <span class="hidden md:inline text-xs font-medium">Exportar</span>
         </button>
 
         <!-- Menu mobile -->
-        <button (click)="toggleConfig.emit()" class="lg:hidden btn-icon">
+        <button (click)="toggleConfig.emit()" class="lg:hidden btn-icon" aria-label="Abrir menú">
             <svg lucideMenu class="w-5 h-5"></svg>
         </button>
     </div>
+
 </header>

@@ -88,5 +88,5 @@ export class SidebarComponent {
             this.toast.success('Parámetros restablecidos');
         }
     }
-    
+
 }
