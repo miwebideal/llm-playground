@@ -12,7 +12,7 @@ Así nació LLM Playground. Una herramienta hecha por devs para devs, para que t
 ## 🛡️ Privacidad Primero (BYOK - Bring Your Own Key)
 **Tus datos son tuyos.** 
 Esta es una Single Page Application (SPA) 100% frontend. 
-- 🚫 **Cero Telemetría:** No hay rastreadores, analíticas ni scripts de terceros.
+- 📉 **Cero Telemetría:** No hay rastreadores, analíticas ni scripts de terceros.
 - 🚫 **Sin Backend Intermediario:** Las peticiones a las APIs de IA se hacen directamente desde tu navegador al proveedor.
 - 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en el `localStorage` de tu navegador. 
 
