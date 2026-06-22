@@ -8,6 +8,7 @@ import { MessageBuilderService } from './message-builder.service';
 import { ToastService } from './toast.service';
 import { Message } from '../models/llm.models';
 import { StreamChunk } from './stream-parser.service';
+import { guessProvider } from '../utils/provider.utils';
 
 @Injectable({ providedIn: 'root' })
 export class LlmOrchestratorService {
@@ -23,62 +24,10 @@ export class LlmOrchestratorService {
     private stopRequested = signal(false);
     readonly isStopping = this.stopRequested.asReadonly();
 
-    // ─── Non-streaming ───
+    cancel() { this.stopRequested.set(false); this.api.cancel(); }
+    stopGenerating() { this.stopRequested.set(true); }
+
     async sendMessage(userContent: string): Promise<void> {
-        const cfg = this.configStore.state();
-        if (!this.configStore.isReady()) {
-            this.toast.warning('Falta configurar API URL, Token o Modelo');
-            return;
-        }
-
-        this._isLoading.set(true);
-
-        const userMsg: Message = {
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: userContent,
-            timestamp: new Date(),
-        };
-        this.messagesStore.append(userMsg);
-
-        const apiMessages = this.builder.build(userContent, cfg, this.messagesStore.validHistory());
-        const startTime = performance.now();
-
-        try {
-            const response = await this.api.send(cfg, apiMessages, false);
-            const ttft = performance.now() - startTime;
-
-            if (!response.ok) {
-                await this.handleHttpError(response);
-                return;
-            }
-
-            const data = await response.json();
-            const totalTime = performance.now() - startTime;
-
-            const assistantMsg: Message = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: this.api.extractContent(data),
-                timestamp: new Date(),
-                metrics: { ttft: Math.round(ttft), totalTime: Math.round(totalTime) },
-            };
-            this.messagesStore.append(assistantMsg);
-
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
-                this._isLoading.set(false);
-                return;
-            }
-            this.handleError(error.message);
-        } finally {
-            this._isLoading.set(false);
-        }
-
-    }
-
-    // ─── Streaming ───
-    async sendMessageStream(userContent: string): Promise<void> {
         const cfg = this.configStore.state();
         if (!this.configStore.isReady()) {
             this.toast.warning('Falta configurar API URL, Token o Modelo');
@@ -88,78 +37,93 @@ export class LlmOrchestratorService {
         this._isLoading.set(true);
         this.stopRequested.set(false);
 
-        this.messagesStore.append({
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: userContent,
-            timestamp: new Date(),
-        });
+        const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: userContent, timestamp: new Date() };
+        this.messagesStore.append(userMsg, 'both');
 
-        const assistantId = crypto.randomUUID();
-        this.messagesStore.append({
-            id: assistantId,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date(),
-            isStreaming: true,
-            metrics: { ttft: 0, totalTime: 0 },
-        });
+        const tasks = [this.processThread('a', userContent, cfg.streamMode)];
+        if (cfg.isCompareMode) {
+            tasks.push(this.processThread('b', userContent, cfg.streamMode));
+        }
 
-        const apiMessages = this.builder.build(userContent, cfg, this.messagesStore.validHistory());
+        await Promise.all(tasks);
+        this._isLoading.set(false);
+    }
+
+    async sendMessageStream(userContent: string): Promise<void> { await this.sendMessage(userContent); }
+
+    private async processThread(thread: 'a' | 'b', userContent: string, isStream: boolean, existingMessageId?: string) {
+
+        const cfg = this.configStore.state();
+        const apiUrl = thread === 'a' ? cfg.apiUrl : cfg.apiUrlB;
+        const apiToken = thread === 'a' ? cfg.apiToken : cfg.apiTokenB;
+        const model = thread === 'a' ? cfg.model : cfg.modelB;
+
+        const assistantId = existingMessageId || crypto.randomUUID();
+
+        if (!existingMessageId) {
+            this.messagesStore.append({
+                id: assistantId,
+                role: 'assistant',
+                content: '',
+                timestamp: new Date(),
+                model: model,
+                provider: guessProvider(apiUrl),
+                isStreaming: true,
+                metrics: { ttft: 0, totalTime: 0 },
+            }, thread);
+        }
+
+        const threadCfg = { ...cfg, apiUrl, apiToken, model };
+        const apiMessages = this.builder.build(userContent, threadCfg, this.messagesStore.validHistory(thread));
         const startTime = performance.now();
 
         try {
-            const response = await this.api.send(cfg, apiMessages, true);
+            const response = await this.api.send(threadCfg, apiMessages, isStream);
             const ttft = performance.now() - startTime;
 
             if (!response.ok) {
-                this.messagesStore.deleteById(assistantId);
-                await this.handleHttpError(response);
+                await this.handleHttpError(response, assistantId);
                 return;
             }
 
-            const contentType = response.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-                const data = await response.json();
-                throw new Error(this.api.extractError(data) || 'La API devolvió JSON en lugar de stream');
-            }
+            if (isStream) {
+                const reader = response.body?.getReader();
+                if (!reader) throw new Error('No se pudo leer el stream');
+                const decoder = new TextDecoder();
+                let buffer = '';
 
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error('No se pudo leer el stream');
+                try {
+                    while (true) {
+                        if (this.stopRequested()) break;
+                        const { done, value } = await reader.read();
+                        if (done) break;
 
-            const decoder = new TextDecoder();
-            let buffer = '';
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
 
-            try {
-                while (true) {
-                    if (this.stopRequested()) {
-                        this.stopRequested.set(false);
-                        break;
-                    }
-
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop() || '';
-
-                    for (const line of lines) {
-                        const chunk = this.api.parseStreamLine(line);
-                        if (chunk) {
-                            this.applyChunkById(assistantId, chunk, ttft);
+                        for (const line of lines) {
+                            const chunk = this.api.parseStreamLine(line);
+                            if (chunk) this.applyChunkById(assistantId, chunk, ttft);
                         }
                     }
-                }
-
-                if (buffer) {
-                    const chunk = this.api.parseStreamLine(buffer);
-                    if (chunk) {
-                        this.applyChunkById(assistantId, chunk, ttft);
+                    if (buffer) {
+                        const chunk = this.api.parseStreamLine(buffer);
+                        if (chunk) this.applyChunkById(assistantId, chunk, ttft);
                     }
+                } finally {
+                    reader.releaseLock();
                 }
-            } finally {
-                reader.releaseLock();
+            } else {
+                const data = await response.json();
+                const content = this.api.extractContent(data);
+                const finishReason = data.choices?.[0]?.finish_reason || data.candidates?.[0]?.finishReason;
+
+                this.messagesStore.updateById(assistantId, msg => ({
+                    ...msg,
+                    content: existingMessageId ? msg.content + content : content,
+                    finishReason: finishReason
+                }));
             }
 
             const totalTime = performance.now() - startTime;
@@ -169,76 +133,72 @@ export class LlmOrchestratorService {
                 metrics: {
                     ...msg.metrics,
                     totalTime: Math.round(totalTime),
-                    ttft: Math.round(ttft),
+                    ttft: msg.metrics?.ttft || Math.round(ttft),
                 },
             }));
 
         } catch (error: any) {
             if (error.name === 'AbortError') {
-                this.messagesStore.updateById(assistantId, msg => ({
-                    ...msg,
-                    isStreaming: false,
-                }));
+                this.messagesStore.updateById(assistantId, msg => ({ ...msg, isStreaming: false }));
                 return;
             }
             this.handleStreamErrorById(assistantId, error.message);
-        } finally {
-            this._isLoading.set(false);
         }
     }
 
-    // ─── Regeneración ───
+    async continueMessage(id: string): Promise<void> {
+        const cfg = this.configStore.state();
+        if (!this.configStore.isReady()) return;
+
+        let thread: 'a' | 'b' = 'a';
+        let msgIndex = this.messagesStore.findIndexById(id, 'a');
+        if (msgIndex === -1) {
+            msgIndex = this.messagesStore.findIndexById(id, 'b');
+            thread = 'b';
+        }
+        if (msgIndex === -1) return;
+
+        const targetMsg = thread === 'a' ? this.messagesStore.stateA()[msgIndex] : this.messagesStore.stateB()[msgIndex];
+        if (targetMsg.role !== 'assistant' || targetMsg.isStreaming) return;
+
+        this._isLoading.set(true);
+        this.stopRequested.set(false);
+
+        this.messagesStore.updateById(id, m => ({ ...m, isStreaming: true, error: undefined }));
+
+        const continuePrompt = "Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.";
+
+        await this.processThread(thread, continuePrompt, cfg.streamMode, id);
+        this._isLoading.set(false);
+    }
+
     canRegenerate(): boolean {
-        const last = this.messagesStore.last();
-        return !!last && last.role === 'assistant' && !last.isStreaming && !last.error;
+        const lastA = this.messagesStore.last('a');
+        const lastB = this.messagesStore.last('b');
+        const canA = !!lastA && lastA.role === 'assistant' && !lastA.isStreaming && !lastA.error;
+        const canB = !!lastB && lastB.role === 'assistant' && !lastB.isStreaming && !lastB.error;
+        return canA || canB;
     }
 
     async regenerateLast(): Promise<void> {
-        const lastUserIdx = this.messagesStore.findLastUserIndex();
-        if (lastUserIdx === -1) return;
+        const lastUserIdxA = this.messagesStore.findLastUserIndex('a');
+        if (lastUserIdxA === -1) return;
 
-        const userContent = this.messagesStore.state()[lastUserIdx].content;
-        this.messagesStore.truncateFrom(lastUserIdx);
+        const userContent = this.messagesStore.stateA()[lastUserIdxA].content;
+        this.messagesStore.truncateFrom(lastUserIdxA - 1, 'both');
 
-        if (this.configStore.streamMode()) {
-            await this.sendMessageStream(userContent);
-        } else {
-            await this.sendMessage(userContent);
-        }
+        await this.sendMessage(userContent);
     }
 
-    // ─── Cancelación ───
-    cancel() {
-        this.stopRequested.set(false);
-        this.api.cancel();
-    }
-
-    stopGenerating() {
-        this.stopRequested.set(true);
-        const last = this.messagesStore.last();
-        if (last && last.isStreaming) {
-            this.messagesStore.updateById(last.id, msg => ({
-                ...msg,
-                isStreaming: false,
-                metrics: {
-                    ...msg.metrics,
-                    totalTime: msg.metrics?.totalTime ?? 0,
-                },
-            }));
-        }
-    }
-
-    // ─── Helpers privados ───
     private applyChunkById(id: string, chunk: StreamChunk, ttft: number) {
         this.messagesStore.updateById(id, msg => ({
             ...msg,
             content: msg.content + chunk.content,
-            reasoning: chunk.reasoning
-                ? (msg.reasoning || '') + chunk.reasoning
-                : msg.reasoning,
+            reasoning: chunk.reasoning ? (msg.reasoning || '') + chunk.reasoning : msg.reasoning,
+            finishReason: chunk.finish_reason || msg.finishReason,
             metrics: {
                 ...(msg.metrics ?? { ttft: 0, totalTime: 0 }),
-                ttft: Math.round(ttft),
+                ttft: msg.metrics?.ttft || Math.round(ttft),
                 ...(chunk.usage && {
                     tokensIn: chunk.usage.prompt_tokens,
                     tokensOut: chunk.usage.completion_tokens,
@@ -247,7 +207,7 @@ export class LlmOrchestratorService {
         }));
     }
 
-    private async handleHttpError(response: Response) {
+    private async handleHttpError(response: Response, id: string) {
         let message = `Error ${response.status}`;
         try {
             const text = await response.text();
@@ -256,18 +216,7 @@ export class LlmOrchestratorService {
             if (response.status === 401) message = 'API Token inválido';
             else if (response.status === 404) message = 'Modelo o URL no encontrados';
         }
-        this.handleError(message);
-    }
-
-    private handleError(message: string) {
-        this.toast.error(message);
-        this.messagesStore.append({
-            id: crypto.randomUUID(),
-            role: 'assistant',
-            content: `❌ Error: ${message}`,
-            timestamp: new Date(),
-            error: message,
-        });
+        this.handleStreamErrorById(id, message);
     }
 
     private handleStreamErrorById(id: string, message: string) {
@@ -276,7 +225,7 @@ export class LlmOrchestratorService {
             ...msg,
             isStreaming: false,
             error: message,
-            content: `❌ Error: ${message}`,
+            content: msg.content ? `${msg.content}\n\n❌ Error: ${message}` : `❌ Error: ${message}`,
         }));
     }
 

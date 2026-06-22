@@ -1,67 +1,88 @@
 <!-- src/app/components/sidebar/sidebar.component.html -->
 
 <aside
-    class="h-full w-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col transition-colors duration-200 shadow-2xl lg:shadow-none">
+    class="h-full w-full bg-surface border-r border-border-base flex flex-col transition-colors duration-200 shadow-2xl lg:shadow-none">
 
-    <div class="flex items-center justify-between p-4 lg:hidden border-b border-gray-200 dark:border-gray-800 shrink-0">
-        <span class="font-semibold text-gray-700 dark:text-gray-200">Configuración</span>
+    <div class="flex items-center justify-between p-4 lg:hidden border-b border-border-base shrink-0">
+        <span class="font-semibold text-text-main">Configuración</span>
         <button (click)="closeSidebar.emit()" class="btn-icon" title="Cerrar" aria-label="Cerrar menú">
             <svg lucideX class="w-5 h-5"></svg>
         </button>
     </div>
 
     <div class="p-4 space-y-5 overflow-y-auto flex-1">
-        <div class="space-y-1.5">
-            <label for="input-api-url" class="label-base">API URL</label>
-            <input id="input-api-url" type="text" [value]="config().apiUrl"
-                (input)="updateApiUrl($any($event).target.value)"
-                placeholder="https://api.ejemplo.com/v1/chat/completions" class="input-base" autocomplete="off"
-                spellcheck="false">
-            <div class="flex flex-wrap gap-1.5 mt-2">
-                @for (preset of ['deepinfra', 'fireworks', 'gemini', 'openrouter', 'groq', 'together']; track preset ) {
-                <button (click)="setPreset(preset)"
-                    class="px-2 py-1 text-xs rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-colors border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:cursor-pointer">
-                    {{ preset }}
-                </button>
-                }
-            </div>
+
+        <!-- Toggle Comparación -->
+        <label
+            class="flex items-center justify-between cursor-pointer group py-2 px-3 bg-primary-bg rounded-lg border border-primary/20">
+            <span class="text-sm font-semibold text-primary-text">Modo Comparación</span>
+            <app-toggle [checked]="config().isCompareMode" (checkedChange)="updateIsCompareMode($event)"></app-toggle>
+        </label>
+
+        <!-- Tabs de Configuración -->
+        @if (config().isCompareMode) {
+        <div class="flex p-1 bg-surface-alt rounded-lg">
+            <button (click)="configTab.set('a')"
+                [class]="configTab() === 'a' ? 'bg-surface shadow-sm text-text-main' : 'text-text-muted hover:text-text-main'"
+                class="flex-1 py-1.5 text-xs font-medium rounded-md transition-all">Modelo A</button>
+            <button (click)="configTab.set('b')"
+                [class]="configTab() === 'b' ? 'bg-surface shadow-sm text-text-main' : 'text-text-muted hover:text-text-main'"
+                class="flex-1 py-1.5 text-xs font-medium rounded-md transition-all">Modelo B</button>
         </div>
+        }
 
-        <div class="space-y-1.5">
-            <label for="input-api-token" class="label-base">API Token</label>
-            <div class="relative">
-                <input id="input-api-token" type="text" [value]="config().apiToken"
-                    (input)="updateApiToken($any($event).target.value)" placeholder="sk-..." class="input-base pr-10"
-                    [class.text-security-disc]="!showToken()" autocomplete="off" autocorrect="off" autocapitalize="off"
-                    spellcheck="false" data-lpignore="true" data-form-type="other">
-
-                <button (click)="showToken.set(!showToken())" aria-label="Mostrar u ocultar token"
-                    class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:cursor-pointer dark:hover:text-gray-300">
-                    @if (showToken()) {
-                    <svg lucideEyeOff class="w-4 h-4"></svg>
-                    } @else {
-                    <svg lucideEye class="w-4 h-4"></svg>
+        <!-- Bloque de Inputs Dinámico -->
+        <div class="space-y-4">
+            <div class="space-y-1.5">
+                <label class="label-base">API URL {{ config().isCompareMode ? (configTab() | uppercase) : '' }}</label>
+                <input type="text" [value]="configTab() === 'a' ? config().apiUrl : config().apiUrlB"
+                    (input)="configTab() === 'a' ? updateApiUrl($any($event).target.value) : updateApiUrlB($any($event).target.value)"
+                    placeholder="https://api.ejemplo.com/v1/chat/completions" class="input-base" autocomplete="off"
+                    spellcheck="false">
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                    @for (preset of presetKeys; track preset ) {
+                    <button (click)="setPreset(preset)"
+                        class="px-2 py-1 text-xs rounded-md bg-surface-alt hover:bg-primary hover:text-text-inverse transition-colors border border-border-base text-text-main hover:cursor-pointer">
+                        {{ preset }}
+                    </button>
                     }
-                </button>
+                </div>
             </div>
+
+            <div class="space-y-1.5">
+                <label class="label-base">API Token {{ config().isCompareMode ? (configTab() | uppercase) : ''
+                    }}</label>
+                <div class="relative">
+                    <input type="text" [value]="configTab() === 'a' ? config().apiToken : config().apiTokenB"
+                        (input)="configTab() === 'a' ? updateApiToken($any($event).target.value) : updateApiTokenB($any($event).target.value)"
+                        placeholder="sk-..." class="input-base pr-10" [class.text-security-disc]="!showToken()"
+                        autocomplete="off" spellcheck="false">
+                    <button (click)="showToken.set(!showToken())"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main hover:cursor-pointer">
+                        @if (showToken()) { <svg lucideEyeOff class="w-4 h-4"></svg> } @else { <svg lucideEye
+                            class="w-4 h-4"></svg> }
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="label-base">Modelo {{ config().isCompareMode ? (configTab() | uppercase) : '' }}</label>
+                <input type="text" [value]="configTab() === 'a' ? config().model : config().modelB"
+                    (input)="configTab() === 'a' ? updateModel($any($event).target.value) : updateModelB($any($event).target.value)"
+                    placeholder="meta-llama/Llama-3.3-70B-Instruct" class="input-base input-model" autocomplete="off"
+                    spellcheck="false">
+            </div>
+
         </div>
 
-        <div class="space-y-1.5">
-            <label for="input-model" class="label-base">Modelo</label>
-            <input id="input-model" type="text" [value]="config().model"
-                (input)="updateModel($any($event).target.value)" placeholder="meta-llama/Llama-3.3-70B-Instruct"
-                class="input-base" autocomplete="off" spellcheck="false">
-        </div>
-
-        <div class="pt-4 border-t border-gray-200 dark:border-gray-800">
+        <!-- Parámetros -->
+        <div class="pt-4 border-t border-border-base">
             <div class="flex items-center justify-between mb-3">
-                <span
-                    class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Parámetros</span>
+                <span class="text-xs font-semibold text-text-muted uppercase tracking-wider">Parámetros</span>
                 <button (click)="resetSettings()"
-                    class="text-[10px] text-gray-400 hover:cursor-pointer hover:text-violet-500 transition-colors flex items-center gap-1"
+                    class="text-[10px] text-text-muted hover:cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
                     title="Restablecer valores por defecto">
-                    <svg lucideRotateCcw class="w-3 h-3"></svg>
-                    Reset
+                    <svg lucideRotateCcw class="w-3 h-3"></svg> Reset
                 </button>
             </div>
 
@@ -79,55 +100,45 @@
             </div>
         </div>
 
+        <!-- System Prompt -->
         <div class="space-y-1.5">
             <label for="input-prompt" class="label-base">System Prompt</label>
             <textarea id="input-prompt" [value]="config().systemPrompt"
-                (input)="updateSystemPrompt($any($event).target.value)" rows="3"
-                class="input-base resize-none"></textarea>
+                (input)="updateSystemPrompt($any($event).target.value)"
+                class="input-base resize-y min-h-20 max-h-[50vh]"></textarea>
         </div>
 
-        <div class="space-y-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+        <div class="space-y-3 pt-2 border-t border-border-base">
+
+            <!-- Toggle Historial -->
             <label class="flex items-center justify-between cursor-pointer group">
                 <div class="flex items-center gap-2">
-                    <svg lucideHistory
-                        class="w-4 h-4 text-gray-500 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors"></svg>
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Incluir Historial</span>
+                    <svg lucideHistory class="w-4 h-4 text-text-muted group-hover:text-primary transition-colors"></svg>
+                    <span class="text-sm font-medium text-text-main">Incluir Historial</span>
                 </div>
-                <div class="relative">
-                    <input type="checkbox" [checked]="config().includeHistory"
-                        (change)="updateIncludeHistory($any($event).target.checked)" class="sr-only peer">
-                    <div
-                        class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-violet-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600">
-                    </div>
-                </div>
+                <app-toggle [checked]="config().includeHistory"
+                    (checkedChange)="updateIncludeHistory($event)"></app-toggle>
             </label>
 
+            <!-- Toggle Stream -->
             <label class="flex items-center justify-between cursor-pointer group">
                 <div class="flex items-center gap-2">
                     <svg lucideActivity
-                        class="w-4 h-4 text-gray-500 group-hover:text-emerald-500 dark:group-hover:text-emerald-400 transition-colors"></svg>
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Modo Stream</span>
+                        class="w-4 h-4 text-text-muted group-hover:text-success transition-colors"></svg>
+                    <span class="text-sm font-medium text-text-main">Modo Stream</span>
                 </div>
-                <div class="relative">
-                    <input type="checkbox" [checked]="config().streamMode"
-                        (change)="updateStreamMode($any($event).target.checked)" class="sr-only peer">
-                    <div
-                        class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600">
-                    </div>
-                </div>
+                <app-toggle [checked]="config().streamMode" (checkedChange)="updateStreamMode($event)"></app-toggle>
             </label>
+
         </div>
 
         <!-- Créditos -->
-        <div class="text-xs pt-6 text-gray-500 dark:text-gray-400 leading-relaxed">
+        <div class="text-xs pt-6 text-text-muted leading-relaxed">
             <p>Un proyecto de <a href="https://miwebideal.com.ar" target="_blank"
-                    class="text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300 hover:underline font-medium transition-colors">MiWebIdeal</a>
+                    class="text-primary hover:text-primary-hover hover:underline font-medium transition-colors">MiWebIdeal</a>
             </p>
-            <p class="mt-1 opacity-75">Devolviendo un poco a la comunidad de la que tanto aprendí 🚀</p>
-
-            <!-- Link al Repo -->
             <a href="https://github.com/miwebideal/llm-playground" target="_blank"
-                class="mt-4 inline-flex items-center text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors font-medium">
+                class="mt-4 inline-flex items-center text-text-muted hover:text-text-main transition-colors font-medium">
                 Link del repo
             </a>
         </div>

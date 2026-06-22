@@ -1,0 +1,8 @@
+<!-- src/app/components/toggle/toggle.component.html -->
+
+<div class="relative inline-block mt-1">
+    <input type="checkbox" [checked]="checked()" (change)="onToggle($event)" class="sr-only peer">
+    <div
+        class="bg-border-strong peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:bg-white after:border-border-strong peer-checked:bg-primary peer-focus:ring-primary after:border after:rounded-full w-9 h-5 after:top-0.5 after:left-0.5 after:h-4 after:w-4 after:transition-all">
+    </div>
+</div>

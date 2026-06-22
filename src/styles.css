@@ -3,135 +3,71 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
-/* Habilitar dark mode por clase en Tailwind v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
-@layer base {
-    body {
-        @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100 transition-colors duration-200;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    }
-}
+@theme {
 
-@layer components {
+    --color-background: var(--bg-base);
+    --color-surface: var(--bg-surface);
+    --color-surface-hover: var(--bg-surface-hover);
+    --color-surface-alt: var(--bg-surface-alt);
 
-    .input-base {
-        @apply w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-400 text-gray-900 dark:text-gray-200 transition-all;
-    }
+    --color-text-main: var(--text-main);
+    --color-text-muted: var(--text-muted);
+    --color-text-inverse: var(--text-inverse);
 
-    .label-base {
-        @apply text-xs font-semibold text-gray-500 dark:text-gray-300 uppercase tracking-wider;
-    }
+    --color-border-base: var(--border-base);
+    --color-border-strong: var(--border-strong);
 
-    .btn-icon {
-        @apply p-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors;
-    }
+    --color-primary: var(--primary);
+    --color-primary-hover: var(--primary-hover);
+    --color-primary-bg: var(--primary-bg);
+    --color-primary-text: var(--primary-text);
 
-    /* Estilos para el mensaje del usuario */
-    .markdown-user {
-        @apply prose prose-sm max-w-none prose-p:text-white prose-headings:text-white prose-strong:text-white prose-a:text-violet-200 hover:prose-a:text-violet-100 prose-code:bg-white/20 prose-code:text-white prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-ul:text-white prose-ol:text-white prose-li:text-white;
-    }
+    --color-model-a: var(--model-a);
+    --color-model-a-bg: var(--model-a-bg);
+    --color-model-a-text: var(--model-a-text);
 
-    /* Estilos mejorados para Markdown (AI) */
-    .markdown-body {
-        @apply prose prose-sm max-w-none dark:prose-invert prose-headings:font-semibold prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-h4:text-sm prose-p:my-2 prose-p:text-gray-700 dark:prose-p:text-gray-200 prose-strong:font-semibold prose-strong:text-gray-900 dark:prose-strong:text-white prose-code:bg-gray-200 dark:prose-code:bg-gray-900 prose-code:text-emerald-600 dark:prose-code:text-emerald-400 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-pre:bg-gray-100 dark:prose-pre:bg-gray-950 prose-pre:border prose-pre:border-gray-300 dark:prose-pre:border-gray-700 prose-pre:rounded-lg prose-pre:p-3 prose-pre:overflow-x-auto prose-blockquote:border-l-4 prose-blockquote:border-violet-500 prose-blockquote:bg-gray-100 dark:prose-blockquote:bg-gray-900/50 prose-blockquote:pl-4 prose-blockquote:py-1 prose-blockquote:italic prose-blockquote:text-gray-600 dark:prose-blockquote:text-gray-400 prose-ul:list-disc prose-ul:pl-5 prose-ul:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-ol:my-2 prose-li:text-gray-700 dark:prose-li:text-gray-300 prose-li:my-0.5 prose-hr:border-gray-300 dark:prose-hr:border-gray-700 prose-hr:my-4 prose-a:text-violet-600 dark:prose-a:text-violet-400 prose-a:underline hover:prose-a:text-violet-700 dark:hover:prose-a:text-violet-300;
-    }
+    --color-model-b: var(--model-b);
+    --color-model-b-bg: var(--model-b-bg);
+    --color-model-b-text: var(--model-b-text);
 
-    /* Tablas */
-    .markdown-body table,
-    .markdown-user table {
-        @apply block w-full overflow-x-auto text-sm text-left border-collapse my-4;
-    }
+    --color-success: var(--success);
+    --color-success-bg: var(--success-bg);
+    --color-success-text: var(--success-text);
 
-    .markdown-body thead,
-    .markdown-user thead {
-        @apply bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200;
-    }
+    --color-error: var(--error);
+    --color-error-bg: var(--error-bg);
+    --color-error-text: var(--error-text);
 
-    .markdown-body th,
-    .markdown-body td,
-    .markdown-user th,
-    .markdown-user td {
-        @apply px-4 py-3 border border-gray-300 dark:border-gray-700;
-    }
+    --color-warning: var(--warning);
+    --color-warning-bg: var(--warning-bg);
+    --color-warning-text: var(--warning-text);
 
-    .markdown-body th,
-    .markdown-user th {
-        @apply font-semibold;
-    }
-
-    .markdown-body td {
-        @apply text-gray-700 dark:text-gray-300;
-    }
-
-    .markdown-user td {
-        @apply text-white;
-    }
-
-    .markdown-body tr:nth-child(even) {
-        @apply bg-gray-100/50 dark:bg-gray-900/50;
-    }
-
-    .markdown-user tr:nth-child(even) {
-        @apply bg-white/10;
-    }
-
-    .markdown-user {
-        @apply prose prose-sm max-w-none;
-    }
-
-    .markdown-user :where(p, h1, h2, h3, h4, h5, h6, strong, ul, ol, li) {
-        @apply text-white;
-    }
-
-    .markdown-user a {
-        @apply text-violet-200 underline;
-    }
-
-    .markdown-user a:hover {
-        @apply text-violet-100;
-    }
-
-    .markdown-user code {
-        @apply bg-white/20 text-white px-1.5 py-0.5 rounded text-xs font-mono;
-    }
+    --color-info: var(--info);
+    --color-info-bg: var(--info-bg);
+    --color-info-text: var(--info-text);
 
 }
+
+@import './styles/base.css';
+@import './styles/components.css';
+@import './styles/markdown.css';
+@import './styles/variables.css';
 
 @layer utilities {
+
     .text-security-disc {
         -webkit-text-security: disc;
     }
-}
 
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    @apply bg-transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-600;
-}
-
-@keyframes spin-once {
-    from {
-        transform: rotate(0deg);
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;
     }
 
-    to {
-        transform: rotate(-360deg);
+    .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
-}
 
-.animate-spin-once {
-    animation: spin-once 0.5s ease-in-out;
 }

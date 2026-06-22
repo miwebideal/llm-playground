@@ -37,6 +37,7 @@ export async function encrypt(text: string): Promise<string> {
 }
 
 export async function decrypt(encrypted: string): Promise<string> {
+
     if (!encrypted) return '';
     try {
         const key = await getKey();
@@ -52,4 +53,5 @@ export async function decrypt(encrypted: string): Promise<string> {
     } catch {
         return '';
     }
+
 }
