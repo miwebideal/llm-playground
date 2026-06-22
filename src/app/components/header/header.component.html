@@ -1,22 +1,22 @@
 <!-- src/app/components/header/header.component.html -->
 
 <header
-    class="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0 transition-colors">
+    class="flex items-center justify-between px-4 py-3 bg-surface border-b border-border-base shrink-0 transition-colors">
+
     <div class="flex items-center gap-3">
-        <div
-            class="w-8 h-8 rounded-lg bg-linear-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-sm">
-            <svg lucideZap class="w-5 h-5 text-white"></svg>
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
+            <svg lucideZap class="w-5 h-5 text-text-inverse"></svg>
         </div>
         <div>
-            <h1 class="font-bold text-lg leading-tight text-gray-900 dark:text-white">LLM Playground</h1>
-            <p class="text-xs text-gray-500 dark:text-gray-400">AI Model Tester</p>
+            <h1 class="font-bold text-lg leading-tight text-text-main">LLM Playground</h1>
+            <p class="text-xs text-text-muted">AI Model Tester</p>
         </div>
     </div>
 
     <div class="flex items-center gap-1 sm:gap-2">
         <!-- Theme toggle -->
-        <button (click)="theme.toggle()" class="btn-icon flex items-center gap-1.5 hover:cursor-pointer"
-            title="Alternar tema" aria-label="Alternar tema">
+        <button (click)="theme.toggle()" class="btn-icon flex items-center gap-1.5" title="Alternar tema"
+            aria-label="Alternar tema">
             @if (theme.isDark()) {
             <svg lucideSun class="w-5 h-5"></svg>
             <span class="hidden md:inline text-xs font-medium">Light</span>
@@ -27,8 +27,8 @@
         </button>
 
         <!-- Exportar -->
-        <button (click)="exportChat.emit()" class="btn-icon flex items-center gap-1.5 hover:cursor-pointer"
-            title="Exportar conversación" aria-label="Exportar conversación">
+        <button (click)="exportChat.emit()" class="btn-icon flex items-center gap-1.5" title="Exportar conversación"
+            aria-label="Exportar conversación">
             <svg lucideDownload class="w-5 h-5"></svg>
             <span class="hidden md:inline text-xs font-medium">Exportar</span>
         </button>

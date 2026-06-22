@@ -1,0 +1,49 @@
+<!-- src/app/components/modal/modal.component.html -->
+
+@if (modalService.isOpen()) {
+<div class="fixed inset-0 z-100 flex items-center justify-center p-4 animate-fade-in">
+
+    <!-- Backdrop oscuro con blur -->
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-xs" (click)="modalService.close(false)"></div>
+
+    <!-- Modal -->
+    <div
+        class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-in border border-border-base">
+
+        <div class="p-6">
+            <div class="flex items-start gap-4">
+                <!-- Ícono -->
+                <div class="shrink-0 p-2 rounded-full"
+                    [class]="modalService.options()?.isDanger ? 'bg-error-bg text-error-text' : 'bg-primary-bg text-primary-text'">
+                    <svg lucideTriangleAlert class="w-6 h-6"></svg>
+                </div>
+
+                <!-- Textos -->
+                <div class="flex-1 pt-1">
+                    <h3 class="text-lg font-semibold text-text-main">
+                        {{ modalService.options()?.title }}
+                    </h3>
+                    <p class="mt-2 text-sm text-text-muted leading-relaxed">
+                        {{ modalService.options()?.message }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer con Botones -->
+        <div class="bg-surface-alt px-6 py-4 flex items-center justify-end gap-3 border-t border-border-base">
+            <button (click)="modalService.close(false)"
+                class="px-4 py-2 text-sm font-medium text-text-main hover:bg-surface-hover rounded-lg transition-colors hover:cursor-pointer">
+                {{ modalService.options()?.cancelText }}
+            </button>
+            <button (click)="modalService.close(true)"
+                class="px-4 py-2 text-sm font-medium text-text-inverse rounded-lg transition-colors hover:cursor-pointer"
+                [class]="modalService.options()?.isDanger ? 'bg-error hover:opacity-90' : 'bg-primary hover:bg-primary-hover'">
+                {{ modalService.options()?.confirmText }}
+            </button>
+        </div>
+
+    </div>
+
+</div>
+}

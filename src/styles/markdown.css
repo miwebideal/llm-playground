@@ -1,0 +1,83 @@
+/* src/styles/markdown.css */
+
+@layer components {
+
+    .markdown-user {
+        @apply prose text-[15px] max-w-none prose-p:text-text-inverse prose-headings:text-text-inverse prose-strong:text-text-inverse prose-a:text-text-inverse hover:prose-a:opacity-80 prose-code:bg-black/20 prose-code:text-text-inverse prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:hidden prose-code:after:hidden prose-ul:text-text-inverse prose-ol:text-text-inverse prose-li:text-text-inverse prose-li:marker:text-text-inverse/70;
+    }
+
+    .markdown-user :where(p, h1, h2, h3, h4, h5, h6, strong, ul, ol, li) {
+        @apply text-text-inverse;
+    }
+
+    .markdown-user a {
+        @apply text-text-inverse underline;
+    }
+
+    .markdown-user a:hover {
+        @apply opacity-80;
+    }
+
+    .markdown-user code {
+        @apply bg-black/20 text-text-inverse px-1.5 py-0.5 rounded text-xs font-mono;
+    }
+
+    .markdown-body {
+        @apply prose text-[15px] max-w-none text-text-main prose-headings:font-semibold prose-headings:text-text-main prose-h1:text-xl prose-h2:text-lg prose-h3:text-base prose-h4:text-sm prose-p:my-2 prose-p:text-text-main prose-code:bg-black/5 dark:prose-code:bg-white/10 prose-code:text-emerald-600 dark:prose-code:text-emerald-400 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:hidden prose-code:after:hidden prose-pre:bg-black/5 dark:prose-pre:bg-black/50 prose-pre:border prose-pre:border-border-base prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary-bg prose-blockquote:pl-4 prose-blockquote:py-1 prose-blockquote:italic prose-blockquote:text-text-muted prose-ul:list-disc prose-ul:pl-5 prose-ul:my-2 prose-ol:list-decimal prose-ol:pl-5 prose-ol:my-2 prose-li:text-text-main prose-li:my-0.5 prose-li:marker:text-text-muted prose-hr:border-border-base prose-hr:my-4 prose-a:text-primary prose-a:underline hover:prose-a:text-primary-hover;
+    }
+
+    .markdown-body pre code {
+        @apply bg-transparent p-0 text-sm text-emerald-600 dark:text-emerald-400;
+    }
+
+    .markdown-body strong,
+    .markdown-body b {
+        color: var(--text-main);
+        font-size: 15px !important;
+    }
+
+    .markdown-body code,
+    .markdown-user code {
+        font-weight: 500;
+        font-size: 15px !important;
+    }
+
+    .markdown-body table,
+    .markdown-user table {
+        @apply block w-full overflow-x-auto text-sm text-left border-collapse my-4;
+    }
+
+    .markdown-body thead,
+    .markdown-user thead {
+        @apply bg-surface-alt text-text-main;
+    }
+
+    .markdown-body th,
+    .markdown-body td,
+    .markdown-user th,
+    .markdown-user td {
+        @apply px-4 py-3 border border-border-base;
+    }
+
+    .markdown-body th,
+    .markdown-user th {
+        @apply font-semibold;
+    }
+
+    .markdown-body td {
+        @apply text-text-main;
+    }
+
+    .markdown-user td {
+        @apply text-text-inverse;
+    }
+
+    .markdown-body tr:nth-child(even) {
+        @apply bg-surface-hover;
+    }
+
+    .markdown-user tr:nth-child(even) {
+        @apply bg-black/10;
+    }
+
+}

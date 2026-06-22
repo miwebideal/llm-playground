@@ -6,16 +6,17 @@ import { Message } from '../../models/llm.models';
 import { SafeMarkdownService } from '../../services/safe-markdown.service';
 import { ToastService } from '../../services/toast.service';
 import { CodeCopyDirective } from '../../directives/code-copy.directive';
+
 import {
     LucideCircleAlert, LucideCopy, LucideTrash2,
-    LucideBrain, LucideChevronDown
+    LucideBrain, LucideChevronDown, LucideBot, LucidePlay
 } from '@lucide/angular';
 
 @Component({
     selector: 'app-chat-message',
     imports: [
         CommonModule, CodeCopyDirective,
-        LucideCircleAlert, LucideCopy, LucideTrash2, LucideBrain, LucideChevronDown
+        LucideCircleAlert, LucideCopy, LucideTrash2, LucideBrain, LucideChevronDown, LucideBot, LucidePlay
     ],
     templateUrl: './chat-message.component.html'
 })
@@ -26,10 +27,15 @@ export class ChatMessageComponent {
 
     msg = input.required<Message>();
     onDelete = output<string>();
+    onContinue = output<string>();
 
-    // Getter para limpiar el HTML
     get isUser(): boolean {
         return this.msg().role === 'user';
+    }
+
+    get isInterrupted(): boolean {
+        const fr = this.msg().finishReason?.toLowerCase();
+        return fr === 'length' || fr === 'max_tokens';
     }
 
     formatTime(date: Date): string {
@@ -50,4 +56,5 @@ export class ChatMessageComponent {
             console.error('Clipboard error:', err);
         }
     }
+
 }

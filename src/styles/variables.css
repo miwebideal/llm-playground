@@ -1,0 +1,109 @@
+/* src/styles/variables.css */
+
+:root {
+
+    /* Fondos y Superficies */
+    --bg-base: #f9fafb;
+    --bg-surface: #ffffff;
+    --bg-surface-hover: #f3f4f6;
+    --bg-surface-alt: #f3f4f6;
+
+    /* Bordes */
+    --border-base: #e5e7eb;
+    --border-strong: #d1d5db;
+
+    /* Textos */
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --text-inverse: #ffffff;
+
+    /* Color Principal */
+    --primary: #7c3aed;
+    --primary-hover: #6d28d9;
+    --primary-bg: #ede9fe;
+    --primary-text: #6d28d9;
+
+    /* Modelo A */
+    --model-a: #7c3aed;
+    --model-a-bg: #ede9fe;
+    --model-a-text: #6d28d9;
+
+    /* Modelo B */
+    --model-b: #059669;
+    --model-b-bg: #d1fae5;
+    --model-b-text: #047857;
+
+    /* Estados */
+    --success: #10b981;
+    --success-bg: #d1fae5;
+    --success-text: #047857;
+
+    --error: #ef4444;
+    --error-bg: #fee2e2;
+    --error-text: #b91c1c;
+
+    --warning: #f59e0b;
+    --warning-bg: #fef3c7;
+    --warning-text: #b45309;
+
+    --info: #3b82f6;
+    --info-bg: #dbeafe;
+    --info-text: #1d4ed8;
+
+    /* Tipografía */
+    --font-base: 'Geist', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+}
+
+.dark {
+
+    /* Fondos y Superficies Dark */
+    --bg-base: #030712;
+    --bg-surface: #111827;
+    --bg-surface-hover: #1f2937;
+    --bg-surface-alt: #1f2937;
+
+    /* Bordes Dark */
+    --border-base: #1f2937;
+    --border-strong: #374151;
+
+    /* Textos Dark */
+    --text-main: #f9fafb;
+    --text-muted: #9ca3af;
+    --text-inverse: #ffffff;
+
+    /* Color Principal Dark */
+    --primary: #8b5cf6;
+    --primary-hover: #7c3aed;
+    --primary-bg: rgba(139, 92, 246, 0.15);
+    --primary-text: #c4b5fd;
+
+    /* Modelo A Dark */
+    --model-a: #8b5cf6;
+    --model-a-bg: rgba(139, 92, 246, 0.15);
+    --model-a-text: #c4b5fd;
+
+    /* Modelo B Dark */
+    --model-b: #10b981;
+    --model-b-bg: rgba(16, 185, 129, 0.15);
+    --model-b-text: #6ee7b7;
+
+    /* Estados Dark */
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --success-text: #6ee7b7;
+
+    --error: #ef4444;
+    --error-bg: rgba(239, 68, 68, 0.15);
+    --error-text: #fca5a5;
+
+    --warning: #f59e0b;
+    --warning-bg: rgba(245, 158, 11, 0.15);
+    --warning-text: #fcd34d;
+
+    --info: #3b82f6;
+    --info-bg: rgba(59, 130, 246, 0.15);
+    --info-text: #93c5fd;
+
+}

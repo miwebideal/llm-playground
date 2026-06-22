@@ -8,6 +8,10 @@ const STORAGE_KEY = 'llm-config-v1';
 
 export interface ConfigState extends LlmConfig {
   _version: number;
+  isCompareMode: boolean;
+  apiUrlB: string;
+  apiTokenB: string;
+  modelB: string;
 }
 
 const DEFAULT_CONFIG: ConfigState = {
@@ -16,10 +20,14 @@ const DEFAULT_CONFIG: ConfigState = {
   apiToken: '',
   model: '',
   temperature: 0.7,
-  maxTokens: 2048,
+  maxTokens: 8192,
   systemPrompt: 'You are a helpful assistant.',
   includeHistory: true,
   streamMode: false,
+  isCompareMode: false,
+  apiUrlB: '',
+  apiTokenB: '',
+  modelB: '',
 };
 
 @Injectable({ providedIn: 'root' })
@@ -40,7 +48,11 @@ export class ConfigStore {
 
   readonly isReady = computed(() => {
     const c = this._state();
-    return !!(c.apiUrl && c.apiToken && c.model);
+    const readyA = !!(c.apiUrl && c.apiToken && c.model);
+    if (!c.isCompareMode) return readyA;
+
+    const readyB = !!(c.apiUrlB && c.apiTokenB && c.modelB);
+    return readyA && readyB;
   });
 
   constructor() {
@@ -63,9 +75,8 @@ export class ConfigStore {
       }
       const parsed = JSON.parse(raw);
 
-      if (parsed.apiToken) {
-        parsed.apiToken = await decrypt(parsed.apiToken);
-      }
+      if (parsed.apiToken) parsed.apiToken = await decrypt(parsed.apiToken);
+      if (parsed.apiTokenB) parsed.apiTokenB = await decrypt(parsed.apiTokenB);
 
       this._state.update(current => ({ ...current, ...parsed }));
       this.initialized = true;
@@ -79,9 +90,10 @@ export class ConfigStore {
     if (!this.initialized) return;
     try {
       const toStore = { ...config };
-      if (toStore.apiToken) {
-        toStore.apiToken = await encrypt(toStore.apiToken);
-      }
+
+      if (toStore.apiToken) toStore.apiToken = await encrypt(toStore.apiToken);
+      if (toStore.apiTokenB) toStore.apiTokenB = await encrypt(toStore.apiTokenB);
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
     } catch (e) {
       console.warn('No se pudo guardar config:', e);

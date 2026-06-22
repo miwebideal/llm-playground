@@ -19,7 +19,33 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://llm-playground.miwebideal.com.ar/#application",
+          "url": "https://llm-playground.miwebideal.com.ar/",
+          "name": "LLM Playground | MiWebIdeal",
+          "description": "Plataforma BYOK de código abierto para testear y comparar modelos de Inteligencia Artificial (LLMs) de forma privada y segura.",
+          "applicationCategory": "DeveloperApplication",
+          "operatingSystem": "All",
+          "isPartOf": {
+            "@id": "https://miwebideal.com.ar/#website"
+          },
+          "provider": {
+            "@id": "https://miwebideal.com.ar/#organization"
+          },
+          "author": {
+            "@id": "https://miwebideal.com.ar/#organization"
+          }
+        }
+      ]
+    }
+  </script>
 
   <script>
     if (localStorage.getItem('theme') === 'dark' || !localStorage.getItem('theme')) {
@@ -31,8 +57,37 @@
 
 </head>
 
-<body>
+<body class="antialiased bg-background text-text-main transition-colors duration-300">
+
+  <!-- SPLASH -->
+  <div id="splash-screen"
+    class="fixed inset-0 flex flex-col justify-center items-center z-9999 bg-background transition-opacity duration-700 ease-in-out">
+
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-widest mb-6 text-primary">
+      LLM PLAYGROUND
+    </h1>
+
+    <!-- Barra de carga -->
+    <div class="h-1 w-32 rounded-full overflow-hidden bg-border-strong">
+      <div class="h-full bg-primary animate-[loading_1.5s_infinite_ease-in-out]"></div>
+    </div>
+
+  </div>
+
   <app-root></app-root>
+
+  <style>
+    @keyframes loading {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
+    }
+  </style>
+
 </body>
 
 </html>

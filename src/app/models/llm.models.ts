@@ -6,6 +6,9 @@ export interface Message {
     content: string;
     reasoning?: string;
     timestamp: Date;
+    model?: string;
+    provider?: string;
+    finishReason?: string;
     metrics?: {
         ttft?: number;
         totalTime?: number;
