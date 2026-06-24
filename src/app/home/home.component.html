@@ -2,7 +2,9 @@
 
 <div class="h-dvh flex flex-col bg-background text-text-main overflow-hidden transition-colors">
 
-    <app-header (toggleConfig)="configOpen.set(!configOpen())" (exportChat)="onExportChat()"></app-header>
+    <app-header (toggleConfig)="configOpen.set(!configOpen())" (exportJson)="onExportJson()" (exportMd)="onExportMd()"
+        (copyChat)="onCopyChat()">
+    </app-header>
 
     <div class="flex-1 flex overflow-hidden relative">
 
@@ -16,13 +18,13 @@
         <!-- Overlay móvil -->
         @if (configOpen()) {
         <div (click)="configOpen.set(false)"
-            class="lg:hidden fixed inset-0 bg-black/50 z-20 backdrop-blur-xs transition-opacity duration-300"></div>
+            class="lg:hidden fixed inset-0 bg-black/50 z-20 transition-opacity duration-300"></div>
         }
 
         <!-- CHAT AREA -->
         <main class="flex-1 flex flex-col min-w-0 bg-background relative transition-colors">
 
-            <!-- Tabs Mobile -->
+            <!-- TABS MOBILE -->
             @if (config().isCompareMode) {
             <div class="flex lg:hidden border-b border-border-base bg-surface-alt shrink-0">
                 <button (click)="activeTab.set('a')"
@@ -31,6 +33,9 @@
                     Modelo A @if (providerA() !== 'unknown') { <span class="opacity-75 font-normal capitalize">· {{
                         providerA() }}</span> }
                 </button>
+
+                <div class="w-px bg-border-strong my-2.5 rounded-full"></div>
+
                 <button (click)="activeTab.set('b')"
                     [class]="activeTab() === 'b' ? 'border-b-2 border-model-b text-model-b font-medium' : 'border-b-2 border-transparent text-text-muted hover:text-text-main'"
                     class="flex-1 py-3 text-sm transition-colors">
@@ -40,7 +45,7 @@
             </div>
             }
 
-            <!-- Contenedor de Mensajes (Split View o Single View) -->
+            <!-- CONTENEDOR DE MENSAJES -->
             <div class="flex-1 flex overflow-hidden">
 
                 <!-- Columna A -->
@@ -130,46 +135,58 @@
             </div>
 
             <!-- Input Area -->
-            <div class="border-t border-border-base bg-surface/80 backdrop-blur p-4 shrink-0 transition-colors">
+            <div class="border-t border-border-base bg-surface/80 p-4 shrink-0 transition-colors">
                 <div class="max-w-4xl mx-auto space-y-3">
 
                     <!-- Toolbar -->
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <span [class]="config().includeHistory ? 'text-primary' : 'text-text-muted'"
-                                class="text-xs font-medium flex items-center gap-1">
-                                <svg lucideHistory class="w-3 h-3"></svg>
-                                Historial {{ config().includeHistory ? 'ON' : 'OFF' }}
-                            </span>
-                            <span [class]="config().streamMode ? 'text-success' : 'text-text-muted'"
-                                class="text-xs font-medium flex items-center gap-1">
-                                <svg lucideActivity class="w-3 h-3"></svg>
-                                Stream {{ config().streamMode ? 'ON' : 'OFF' }}
-                            </span>
-                        </div>
+
+                        <!-- Indicadores Interactivos -->
                         <div class="flex items-center gap-2">
-                            @if (canRegenerate()) {
-                            <button (click)="regenerateLast()"
-                                class="text-xs text-text-muted hover:text-success transition-colors flex items-center gap-1 hover:cursor-pointer"
+                            <button (click)="toggleHistory()"
+                                class="min-w-22 flex items-center justify-center px-2.5 py-1 rounded-full border text-[10px] font-medium transition-all select-none cursor-pointer shadow-sm"
+                                [class]="config().includeHistory 
+                                    ? 'bg-primary border-primary text-text-inverse hover:bg-primary-hover' 
+                                    : 'bg-transparent border-border-strong text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5'">
+                                Historial {{ config().includeHistory ? 'ON' : 'OFF' }}
+                            </button>
+
+                            <button (click)="toggleStream()"
+                                class="min-w-19 flex items-center justify-center px-2.5 py-1 rounded-full border text-[10px] font-medium transition-all select-none cursor-pointer shadow-sm"
+                                [class]="config().streamMode 
+                                    ? 'bg-primary border-primary text-text-inverse hover:bg-primary-hover' 
+                                    : 'bg-transparent border-border-strong text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5'">
+                                Stream {{ config().streamMode ? 'ON' : 'OFF' }}
+                            </button>
+                        </div>
+
+
+                        <!-- Botones de Acción (Cápsulas) -->
+                        <div class="flex items-center gap-2">
+                            <!-- REGENERAR: Ahora usa primary (violeta) -->
+                            <button (click)="regenerateLast()" [disabled]="!canRegenerate()"
+                                class="px-2.5 py-1 rounded-full border border-border-strong text-[10px] font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-30 disabled:hover:text-text-muted disabled:hover:border-border-strong disabled:hover:bg-transparent disabled:cursor-not-allowed shadow-sm"
                                 title="Regenerar última respuesta">
                                 <svg lucideRotateCcw class="w-3 h-3"></svg> Regenerar
                             </button>
-                            }
-                            @if (messagesA().length > 0 || messagesB().length > 0) {
+
+                            <!-- LIMPIAR: Mantiene error (rojo) -->
                             <button (click)="clearMessages()"
-                                class="text-xs text-text-muted hover:text-error transition-colors flex items-center gap-1 hover:cursor-pointer">
+                                [disabled]="messagesA().length === 0 && messagesB().length === 0"
+                                class="px-2.5 py-1 rounded-full border border-border-strong text-[10px] font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-error hover:border-error/50 hover:bg-error/5 disabled:opacity-30 disabled:hover:text-text-muted disabled:hover:border-border-strong disabled:hover:bg-transparent disabled:cursor-not-allowed shadow-sm">
                                 <svg lucideTrash class="w-3 h-3"></svg> Limpiar chat{{ config().isCompareMode ? 's' : ''
                                 }}
                             </button>
-                            }
                         </div>
+
                     </div>
 
                     <!-- Quick Prompts -->
                     <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
                         @for (prompt of quickPrompts; track prompt.title) {
+                        <!-- QUICK PROMPTS: Estilo cápsula con sombra y hover violeta -->
                         <button (click)="setPrompt(prompt.text)"
-                            class="shrink-0 px-2 py-1 text-[11px] sm:px-3 sm:py-1.5 sm:text-xs font-medium rounded-full bg-surface-alt text-text-muted hover:bg-primary-bg hover:text-primary-text transition-colors border border-transparent hover:border-primary/20 cursor-pointer">
+                            class="shrink-0 px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-full border border-border-strong text-text-muted transition-all hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm select-none cursor-pointer">
                             {{ prompt.title }}
                         </button>
                         }
@@ -177,7 +194,7 @@
 
                     <!-- Input -->
                     <div
-                        class="relative flex flex-col w-full bg-surface-alt border border-border-strong rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all">
+                        class="relative flex flex-col w-full bg-surface-alt border border-border-strong rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
                         <div class="flex items-start">
 
                             <textarea #messageInput [value]="userInput()"
@@ -190,20 +207,23 @@
                             <div class="p-2 pt-3">
                                 @if (isLoading()) {
                                 <div class="flex items-center gap-1">
+                                    <!-- STOP: Ahora es violeta (primary) -->
                                     <button (click)="stopGenerating()"
-                                        class="p-1.5 rounded-lg bg-warning hover:opacity-90 text-white transition-colors"
+                                        class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors shadow-sm cursor-pointer"
                                         title="Detener generación">
                                         <svg lucideSquare class="w-4 h-4"></svg>
                                     </button>
+                                    <!-- CANCEL: Mantiene rojo (error) -->
                                     <button (click)="cancelRequest()"
-                                        class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors animate-pulse"
+                                        class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors animate-pulse shadow-sm cursor-pointer"
                                         title="Cancelar">
                                         <svg lucideX class="w-4 h-4"></svg>
                                     </button>
                                 </div>
                                 } @else {
+                                <!-- SEND: Violeta (primary) -->
                                 <button (click)="sendMessage()" [disabled]="!userInput().trim()"
-                                    class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-surface-hover disabled:text-text-muted text-text-inverse cursor-pointer transition-colors"
+                                    class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-surface-hover disabled:text-text-muted text-text-inverse cursor-pointer transition-colors shadow-sm"
                                     title="Enviar">
                                     <svg lucideSendHorizontal class="w-4 h-4"></svg>
                                 </button>
@@ -234,6 +254,7 @@
 
                 </div>
             </div>
+
         </main>
 
     </div>

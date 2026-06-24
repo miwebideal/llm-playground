@@ -1,6 +1,6 @@
 // src/app/home/home.component.ts
 
-import { Component, signal, viewChild, ElementRef, afterNextRender, effect, computed, inject, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, signal, viewChild, ElementRef, afterNextRender, effect, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LlmOrchestratorService } from '../services/llm-orchestrator.service';
 import { ConfigStore } from '../stores/config.store';
@@ -16,8 +16,7 @@ import { guessProvider } from '../utils/provider.utils';
 import { QUICK_PROMPTS } from '../utils/chat.constants';
 
 import {
-    LucideMessageSquare, LucideCircleAlert, LucideHistory,
-    LucideActivity, LucideTrash, LucideX, LucideSendHorizontal, LucideRotateCcw,
+    LucideMessageSquare, LucideCircleAlert, LucideTrash, LucideX, LucideSendHorizontal, LucideRotateCcw,
     LucideSquare
 } from '@lucide/angular';
 
@@ -25,13 +24,12 @@ import {
     selector: 'app-home',
     imports: [
         CommonModule, HeaderComponent, SidebarComponent, ChatMessageComponent,
-        LucideMessageSquare, LucideCircleAlert, LucideHistory,
-        LucideActivity, LucideTrash, LucideX, LucideSendHorizontal, LucideRotateCcw,
+        LucideMessageSquare, LucideCircleAlert, LucideTrash, LucideX, LucideSendHorizontal, LucideRotateCcw,
         LucideSquare
     ],
     templateUrl: './home.component.html',
 })
-export class HomeComponent implements AfterViewInit, OnDestroy {
+export class HomeComponent {
 
     userInput = signal('');
     configOpen = signal(false);
@@ -47,7 +45,6 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
     private messagesStore = inject(MessagesStore);
     private modalService = inject(ModalService);
     private readonly DRAFT_KEY = 'llm-draft';
-    private mutationObservers: MutationObserver[] = [];
 
     readonly canRegenerate = computed(() => this.orchestrator.canRegenerate());
     readonly isLoading = this.orchestrator.isLoading;
@@ -84,30 +81,64 @@ export class HomeComponent implements AfterViewInit, OnDestroy {
             else localStorage.removeItem(this.DRAFT_KEY);
         });
 
-    }
-
-    ngAfterViewInit() {
-        this.setupScrollObserver(this.messagesContainerRef()?.nativeElement);
-        this.setupScrollObserver(this.messagesContainerBRef()?.nativeElement);
-    }
-
-    async regenerateLast() { await this.orchestrator.regenerateLast(); }
-    onExportChat() { this.exportService.exportChat(this.messagesA(), this.messagesB(), this.configStore.state()); }
-    ngOnDestroy() { this.mutationObservers.forEach(o => o.disconnect()); }
-
-    private setupScrollObserver(element?: HTMLElement) {
-        if (!element) return;
-        const observer = new MutationObserver(() => {
-            const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 150;
-
-            if (isNearBottom) {
-                requestAnimationFrame(() => {
-                    element.scrollTop = element.scrollHeight;
+        effect((onCleanup) => {
+            const el = this.messagesContainerRef()?.nativeElement;
+            if (el) {
+                const obs = new MutationObserver(() => {
+                    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+                    if (isNearBottom) {
+                        requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
+                    }
                 });
+                obs.observe(el, { childList: true, subtree: true, characterData: true });
+                onCleanup(() => obs.disconnect());
             }
         });
-        observer.observe(element, { childList: true, subtree: true, characterData: true });
-        this.mutationObservers.push(observer);
+
+        effect((onCleanup) => {
+            const el = this.messagesContainerBRef()?.nativeElement;
+            if (el) {
+                const obs = new MutationObserver(() => {
+                    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+                    if (isNearBottom) {
+                        requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
+                    }
+                });
+                obs.observe(el, { childList: true, subtree: true, characterData: true });
+                onCleanup(() => obs.disconnect());
+            }
+        });
+
+    }
+
+    onExportJson() { this.exportService.exportChat(this.messagesA(), this.messagesB(), this.configStore.state()); }
+    onExportMd() { this.exportService.exportMarkdown(this.messagesA(), this.messagesB(), this.configStore.state()); }
+    onCopyChat() { this.exportService.copyChat(this.messagesA(), this.messagesB(), this.configStore.state()); }
+
+    async regenerateLast() {
+        const confirmed = await this.modalService.confirm({
+            title: 'Regenerar respuesta',
+            message: '¿Estás seguro de que querés regenerar la última respuesta? Se eliminará la respuesta actual de la IA y se generará una nueva.',
+            confirmText: 'Sí, regenerar',
+            cancelText: 'Cancelar',
+            isDanger: true
+        });
+
+        if (confirmed) {
+            await this.orchestrator.regenerateLast();
+        }
+    }
+
+    toggleHistory() {
+        const newState = !this.config().includeHistory;
+        this.configStore.update({ includeHistory: newState });
+        this.toast.info(`Historial ${newState ? 'activado' : 'desactivado'}`);
+    }
+
+    toggleStream() {
+        const newState = !this.config().streamMode;
+        this.configStore.update({ streamMode: newState });
+        this.toast.info(`Modo Stream ${newState ? 'activado' : 'desactivado'}`);
     }
 
     adjustHeight(el: HTMLTextAreaElement) {

@@ -28,4 +28,5 @@ export interface LlmConfig {
     systemPrompt: string;
     includeHistory: boolean;
     streamMode: boolean;
+    useParams: boolean; 
 }

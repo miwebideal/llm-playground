@@ -21,12 +21,22 @@ export class LlmOrchestratorService {
 
     private _isLoading = signal(false);
     readonly isLoading = this._isLoading.asReadonly();
+
     private stopRequested = signal(false);
     readonly isStopping = this.stopRequested.asReadonly();
 
-    cancel() { this.stopRequested.set(false); this.api.cancel(); }
-    stopGenerating() { this.stopRequested.set(true); }
+    // Cancela la petición HTTP actual de forma abrupta
+    cancel() {
+        this.stopRequested.set(false);
+        this.api.cancel();
+    }
 
+    // Detiene la lectura del stream de forma controlada
+    stopGenerating() {
+        this.stopRequested.set(true);
+    }
+
+    // Inicia el envío de un nuevo mensaje del usuario y maneja automáticamente el modo comparación si está activo
     async sendMessage(userContent: string): Promise<void> {
         const cfg = this.configStore.state();
         if (!this.configStore.isReady()) {
@@ -37,7 +47,12 @@ export class LlmOrchestratorService {
         this._isLoading.set(true);
         this.stopRequested.set(false);
 
-        const userMsg: Message = { id: crypto.randomUUID(), role: 'user', content: userContent, timestamp: new Date() };
+        const userMsg: Message = {
+            id: crypto.randomUUID(),
+            role: 'user',
+            content: userContent,
+            timestamp: new Date()
+        };
         this.messagesStore.append(userMsg, 'both');
 
         const tasks = [this.processThread('a', userContent, cfg.streamMode)];
@@ -49,10 +64,8 @@ export class LlmOrchestratorService {
         this._isLoading.set(false);
     }
 
-    async sendMessageStream(userContent: string): Promise<void> { await this.sendMessage(userContent); }
-
+    // Procesa un hilo de chat individual (Modelo A o Modelo B)
     private async processThread(thread: 'a' | 'b', userContent: string, isStream: boolean, existingMessageId?: string) {
-
         const cfg = this.configStore.state();
         const apiUrl = thread === 'a' ? cfg.apiUrl : cfg.apiUrlB;
         const apiToken = thread === 'a' ? cfg.apiToken : cfg.apiTokenB;
@@ -137,15 +150,17 @@ export class LlmOrchestratorService {
                 },
             }));
 
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
+        } catch (error: unknown) {
+            const err = error as Error;
+            if (err.name === 'AbortError') {
                 this.messagesStore.updateById(assistantId, msg => ({ ...msg, isStreaming: false }));
                 return;
             }
-            this.handleStreamErrorById(assistantId, error.message);
+            this.handleStreamErrorById(assistantId, err.message || 'Error desconocido');
         }
     }
 
+    // Continúa la generación de un mensaje que fue interrumpido (ej: por max_tokens)
     async continueMessage(id: string): Promise<void> {
         const cfg = this.configStore.state();
         if (!this.configStore.isReady()) return;
@@ -172,6 +187,7 @@ export class LlmOrchestratorService {
         this._isLoading.set(false);
     }
 
+    // Verifica si es posible regenerar el último mensaje
     canRegenerate(): boolean {
         const lastA = this.messagesStore.last('a');
         const lastB = this.messagesStore.last('b');
@@ -180,6 +196,7 @@ export class LlmOrchestratorService {
         return canA || canB;
     }
 
+    // Elimina la última respuesta de la IA y vuelve a enviar el último prompt del usuario
     async regenerateLast(): Promise<void> {
         const lastUserIdxA = this.messagesStore.findLastUserIndex('a');
         if (lastUserIdxA === -1) return;

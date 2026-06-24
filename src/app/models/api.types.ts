@@ -8,8 +8,8 @@ export interface ApiMessage {
 export interface ApiPayload {
     model: string;
     messages: ApiMessage[];
-    temperature: number;
-    max_tokens: number;
+    temperature?: number;
+    max_tokens?: number;
     stream: boolean;
     stream_options?: {
         include_usage: boolean;
