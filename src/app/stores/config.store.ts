@@ -28,6 +28,7 @@ const DEFAULT_CONFIG: ConfigState = {
   apiUrlB: '',
   apiTokenB: '',
   modelB: '',
+  useParams: true,
 };
 
 @Injectable({ providedIn: 'root' })
@@ -45,6 +46,7 @@ export class ConfigStore {
   readonly systemPrompt = computed(() => this._state().systemPrompt);
   readonly includeHistory = computed(() => this._state().includeHistory);
   readonly streamMode = computed(() => this._state().streamMode);
+  readonly useParams = computed(() => this._state().useParams);
 
   readonly isReady = computed(() => {
     const c = this._state();
@@ -107,11 +109,12 @@ export class ConfigStore {
   resetParams() {
     this._state.update(current => ({
       ...current,
-      temperature: DEFAULT_CONFIG.temperature,
-      maxTokens: DEFAULT_CONFIG.maxTokens,
-      systemPrompt: DEFAULT_CONFIG.systemPrompt,
-      includeHistory: DEFAULT_CONFIG.includeHistory,
-      streamMode: DEFAULT_CONFIG.streamMode,
+      temperature: 0.7,
+      maxTokens: 8192,
+      systemPrompt: 'You are a helpful assistant.',
+      includeHistory: true,
+      streamMode: false,
+      useParams: true,
     }));
   }
 

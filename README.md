@@ -14,14 +14,15 @@ Así nació LLM Playground. Una herramienta hecha por devs para devs, para que t
 Esta es una Single Page Application (SPA) 100% frontend. 
 - 📉 **Cero Telemetría:** No hay rastreadores, analíticas ni scripts de terceros.
 - 🚫 **Sin Backend Intermediario:** Las peticiones a las APIs de IA se hacen directamente desde tu navegador al proveedor.
-- 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en el `localStorage` de tu navegador. 
+- 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en el `localStorage` de tu navegador (encriptado). 
 
 ## ✨ Características Principales
 - **Soporte Multi-Proveedor:** Compatible con cualquier API que use el estándar de OpenAI (Fireworks, DeepInfra, Groq, Together, OpenRouter, Gemini, etc.).
-- **Streaming en Tiempo Real:** Respuestas fluidas con cálculo de métricas (TTFT y Tiempo Total).
-- **Soporte para Modelos de Razonamiento:** Captura y muestra el "proceso de pensamiento" (reasoning) en un acordeón colapsable antes de la respuesta final.
+- **Modo Comparación:** Evaluá dos modelos o proveedores distintos simultáneamente, lado a lado, con el mismo prompt.
+- **Métricas y Costos:** Cálculo en tiempo real de TPS (Tokens por segundo), TTFT, tiempo total y costo estimado en USD según el modelo.
+- **Soporte para Modelos de Razonamiento:** Captura el "proceso de pensamiento" en un acordeón colapsable y permite desactivar parámetros incompatibles (Temp, System Prompt) con un clic.
+- **Exportación Flexible:** Descargá tus conversaciones en formato JSON, Markdown (.md) o copialas directamente al portapapeles.
 - **Markdown & Code Highlighting:** Renderizado perfecto de tablas, listas y bloques de código con botón de "Copiar" integrado.
-- **Estimador de Tokens:** Calcula los tokens estimados mientras escribís y muestra el gasto real al finalizar.
 - **Dark/Light Mode:** Tema adaptable y persistente.
 
 ## 🛠️ Stack Tecnológico

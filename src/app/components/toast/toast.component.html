@@ -1,24 +1,25 @@
 <!-- src/app/components/toast/toast.component.html -->
 
-<div class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+<!-- CONTENEDOR -->
+<div class="fixed z-100 flex flex-col gap-2 pointer-events-none max-w-64 md:max-w-full top-20 right-4">
 
     @for (toast of toastService.toasts(); track toast.id) {
-    <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border transition-all duration-300 animate-fade-in"
+
+    <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border transition-all duration-300 animate-fade-in w-full"
         [ngClass]="getToastClasses(toast.type)">
 
-        <!-- Icono según el tipo -->
         @switch (toast.type) {
-        @case ('success') { <svg lucideCheckCheck class="w-5 h-5"></svg> }
-        @case ('error') { <svg lucideAlertCircle class="w-5 h-5"></svg> }
-        @case ('warning') { <svg lucideAlertTriangle class="w-5 h-5"></svg> }
-        @case ('info') { <svg lucideInfo class="w-5 h-5"></svg> }
+        @case ('success') { <svg lucideCheckCheck class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
+        @case ('error') { <svg lucideAlertCircle class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
+        @case ('warning') { <svg lucideAlertTriangle class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
+        @case ('info') { <svg lucideInfo class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
         }
 
-        <span class="text-xs md:text-sm font-medium">{{ toast.message }}</span>
+        <span class="text-xs md:text-sm font-medium flex-1">{{ toast.message }}</span>
 
         <button (click)="toastService.remove(toast.id)"
-            class="ml-2 opacity-70 hover:opacity-100 transition-opacity cursor-pointer">
-            <svg lucideX class="w-4 h-4"></svg>
+            class="ml-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0 p-1">
+            <svg lucideX class="w-3.5 h-3.5 md:w-4 md:h-4"></svg>
         </button>
     </div>
     }

@@ -19,11 +19,14 @@ export class LlmApiService {
         const payload: ApiPayload = {
             model: cfg.model,
             messages,
-            temperature: cfg.temperature,
-            max_tokens: cfg.maxTokens,
             stream,
             ...(stream && { stream_options: { include_usage: true } }),
         };
+
+        if (cfg.useParams) {
+            payload.temperature = cfg.temperature;
+            payload.max_tokens = cfg.maxTokens;
+        }
 
         try {
             const response = await fetch(cfg.apiUrl, {

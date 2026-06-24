@@ -14,7 +14,7 @@ export class MessageBuilderService {
     ): ApiMessage[] {
         const result: ApiMessage[] = [];
 
-        if (config.systemPrompt?.trim()) {
+        if (config.useParams && config.systemPrompt?.trim()) {
             result.push({ role: 'system', content: config.systemPrompt });
         }
 

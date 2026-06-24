@@ -16,11 +16,18 @@ function generateId(): string {
     return crypto.randomUUID();
 }
 
-function reviveMessage(m: any): Message {
+// Restaura un mensaje desde el localStorage asegurando que tenga el formato correcto
+function reviveMessage(m: Partial<Message>): Message {
     return {
         id: m.id || generateId(),
-        ...m,
-        timestamp: new Date(m.timestamp),
+        role: m.role || 'user',
+        content: m.content || '',
+        timestamp: m.timestamp ? new Date(m.timestamp) : new Date(),
+        model: m.model,
+        provider: m.provider,
+        reasoning: m.reasoning,
+        metrics: m.metrics,
+        finishReason: m.finishReason,
         isStreaming: false,
         error: undefined,
     };
@@ -58,8 +65,8 @@ function saveToStorage(state: MessagesState): MessagesState {
     try {
         localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
         return state;
-    } catch (e: any) {
-        console.error('Error saving messages:', e);
+    } catch (e) {
+        console.error('Error guardando mensajes:', e);
         return state;
     }
 }
@@ -68,7 +75,7 @@ function saveToStorage(state: MessagesState): MessagesState {
 export class MessagesStore {
 
     private _state = signal<MessagesState>(loadFromStorage());
-    private saveTimeout: any;
+    private saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
     readonly stateA = computed(() => this._state().a);
     readonly stateB = computed(() => this._state().b);
