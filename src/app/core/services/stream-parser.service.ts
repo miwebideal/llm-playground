@@ -1,7 +1,7 @@
-// src/app/services/stream-parser.service.ts
+// src/app/core/services/stream-parser.service.ts
 
 import { Injectable } from '@angular/core';
-import { StreamChunkRaw } from '../models/api.types';
+import { StreamChunkRaw } from '../../models/api.types';
 
 export interface StreamChunk {
     content: string;

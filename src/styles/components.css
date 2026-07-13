@@ -1,6 +1,7 @@
 /* src/styles/components.css */
 
 @layer components {
+
     .input-base {
         @apply w-full px-3 py-2 bg-surface-alt border border-border-base rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-muted text-text-main transition-all;
     }
@@ -18,7 +19,7 @@
     }
 
     .bubble-ai {
-        @apply w-full max-w-full lg:max-w-[90%] text-text-main py-2;
+        @apply w-full max-w-full text-text-main py-2;
     }
 
     .badge-model {

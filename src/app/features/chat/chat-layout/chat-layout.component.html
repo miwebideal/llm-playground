@@ -1,0 +1,47 @@
+<!-- src/app/features/chat/chat-layout/chat-layout.component.html -->
+
+<div class="flex flex-col h-full w-full">
+
+    <!-- TABS MOBILE -->
+    @if (activeSessions.length > 1) {
+    <div class="flex lg:hidden border-b border-border-base bg-surface-alt shrink-0">
+        @for (session of activeSessions; track session.id; let i = $index) {
+        <button (click)="activeMobileTab.set(i)"
+            [class]="activeMobileTab() === i ? 'border-b-2 border-primary text-primary font-medium' : 'border-b-2 border-transparent text-text-muted hover:text-text-main'"
+            class="flex-1 py-3 text-sm transition-colors flex items-center justify-center gap-1">
+            {{ session.name }}
+            @if (session.provider && session.provider !== 'unknown') {
+            <span class="opacity-75 capitalize ">· {{ session.provider }}</span>
+            }
+        </button>
+        @if (i === 0) { <div class="w-px bg-border-strong my-2.5 rounded-full"></div> }
+        }
+    </div>
+    }
+
+    <!-- CONTENEDOR DE COLUMNAS -->
+    <div id="compare-container" class="flex-1 flex overflow-hidden w-full">
+
+        @for (session of activeSessions; track session.id; let i = $index, isLast = $last) {
+
+        <!-- WRAPPER DE LA COLUMNA -->
+        <div class="flex flex-col min-w-0 h-full transition-all max-lg:w-full!"
+            [class.max-lg:hidden]="activeSessions.length > 1 && activeMobileTab() !== i"
+            [style.width.%]="activeSessions.length > 1 && i === 0 ? leftColumnWidth() : (activeSessions.length > 1 && i === 1 ? 100 - leftColumnWidth() : 100)">
+
+            <app-chat-column class="flex-1 flex flex-col overflow-hidden" [session]="session"
+                [isCompareMode]="activeSessions.length > 1"></app-chat-column>
+
+        </div>
+
+        <!-- DIVISOR -->
+        @if (!isLast && activeSessions.length > 1) {
+        <div class="hidden lg:flex w-2 bg-border-base hover:bg-primary/50 cursor-col-resize items-center justify-center z-10 transition-colors shrink-0"
+            (mousedown)="onDragStart($event)">
+            <div class="w-0.5 h-8 bg-border-strong rounded-full pointer-events-none"></div>
+        </div>
+        }
+        }
+
+    </div>
+</div>

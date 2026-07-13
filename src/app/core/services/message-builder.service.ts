@@ -1,15 +1,15 @@
-// src/app/services/message-builder.service.ts
+// src/app/core/services/message-builder.service.ts
 
 import { Injectable } from '@angular/core';
-import { LlmConfig, Message } from '../models/llm.models';
-import { ApiMessage } from '../models/api.types';
+import { GlobalConfig, Message } from '../../models/chat.models';
+import { ApiMessage } from '../../models/api.types';
 
 @Injectable({ providedIn: 'root' })
 export class MessageBuilderService {
 
     build(
         userContent: string,
-        config: LlmConfig,
+        config: GlobalConfig,
         history: Message[]
     ): ApiMessage[] {
         const result: ApiMessage[] = [];
@@ -30,5 +30,4 @@ export class MessageBuilderService {
 
         return result;
     }
-
 }

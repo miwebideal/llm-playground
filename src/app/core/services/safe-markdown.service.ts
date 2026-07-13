@@ -1,4 +1,4 @@
-// src/app/services/safe-markdown.service.ts
+// src/app/core/services/safe-markdown.service.ts
 
 import { inject, Injectable, SecurityContext } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';

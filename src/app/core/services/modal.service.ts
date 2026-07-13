@@ -1,4 +1,4 @@
-// src/app/services/modal.service.ts
+// src/app/core/services/modal.service.ts
 
 import { Injectable, signal } from '@angular/core';
 

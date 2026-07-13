@@ -1,7 +1,7 @@
 // src/app/directives/code-copy.directive.ts
 
 import { Directive, ElementRef, Input, OnChanges, SimpleChanges, OnDestroy, inject, Renderer2, AfterViewInit } from '@angular/core';
-import { ToastService } from '../services/toast.service';
+import { ToastService } from '../core/services/toast.service';
 
 @Directive({
     selector: '[appCodeCopy]',

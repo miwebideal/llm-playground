@@ -1,8 +1,8 @@
 // src/app/components/toast/toast.component.ts
 
 import { Component, inject } from '@angular/core';
-import { ToastService, ToastType } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
+import { ToastService, ToastType } from '../../core/services/toast.service';
 
 import { LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideX, LucideCheckCheck } from '@lucide/angular';
 

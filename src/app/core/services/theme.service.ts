@@ -1,4 +1,4 @@
-// src/app/services/theme.service.ts
+// src/app/core/services/theme.service.ts
 
 import { Injectable, signal, effect, inject, PLATFORM_ID, RendererFactory2 } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';

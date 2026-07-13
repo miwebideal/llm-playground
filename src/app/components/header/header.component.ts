@@ -1,7 +1,7 @@
 // src/app/components/header/header.component.ts
 
 import { Component, inject, output, signal } from '@angular/core';
-import { ThemeService } from '../../services/theme.service';
+import { ThemeService } from '../../core/services/theme.service';
 
 import {
     LucideZap, LucideMenu, LucideSun, LucideMoon,

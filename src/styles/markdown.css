@@ -56,7 +56,7 @@
     .markdown-body td,
     .markdown-user th,
     .markdown-user td {
-        @apply px-4 py-3 border border-border-base;
+        @apply px-4 py-3 border border-border-strong dark:border-white/10;
     }
 
     .markdown-body th,
@@ -71,6 +71,15 @@
     .markdown-user td {
         @apply text-text-inverse;
     }
+
+    .markdown-body tr:nth-child(even) {
+        @apply bg-black/5 dark:bg-white/5;
+    }
+
+    .markdown-user tr:nth-child(even) {
+        @apply bg-black/10 dark:bg-white/10;
+    }
+
 
     .markdown-body tr:nth-child(even) {
         @apply bg-surface-hover;

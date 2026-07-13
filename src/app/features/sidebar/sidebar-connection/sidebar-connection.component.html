@@ -1,0 +1,57 @@
+<!-- src/app/features/sidebar/sidebar-connection/sidebar-connection.component.html -->
+
+<div class="space-y-4">
+    <!-- API URL -->
+    <div class="space-y-1.5">
+        <label class="label-base">API URL</label>
+        <select [value]="apiUrlSelectValue()" (change)="onApiUrlSelect($event)"
+            class="input-base cursor-pointer capitalize">
+            <option value="" disabled>Selecciona un proveedor...</option>
+            @for (preset of presetKeys; track preset) {
+            <option [value]="preset">{{ preset }}</option>
+            }
+            <option value="manual" class="font-semibold text-primary">Ingresar Manualmente</option>
+        </select>
+
+        @if (apiUrlSelectValue() === 'manual') {
+        <input type="text" [value]="session().apiUrl" (input)="updateSession('apiUrl', $any($event).target.value)"
+            class="input-base mt-2 animate-fade-in" placeholder="https://api.ejemplo.com/v1/chat/completions">
+        }
+    </div>
+
+    <!-- API TOKEN -->
+    <div class="space-y-1.5">
+        <label class="label-base">API Token</label>
+        <div class="relative">
+            <input type="text" [value]="session( ).apiToken"
+                (input)="updateSession('apiToken', $any($event).target.value)" class="input-base pr-10"
+                [style.-webkit-text-security]="showToken() ? 'none' : 'disc'" placeholder="sk-...">
+            <button (click)="showToken.set(!showToken())"
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main">
+                @if (showToken()) { <svg lucideEyeOff class="w-4 h-4"></svg> } @else { <svg lucideEye
+                    class="w-4 h-4"></svg> }
+            </button>
+        </div>
+    </div>
+
+    <!-- MODELO -->
+    <div class="space-y-1.5">
+        <label class="label-base">Modelo</label>
+        <select [value]="modelSelectValue()" (change)="onModelSelect($event)" class="input-base cursor-pointer">
+            <option value="" disabled>Selecciona un modelo...</option>
+            @for (group of modelGroups; track group) {
+            <optgroup [label]="group">
+                @for (model of aiModels[group]; track model) {
+                <option [value]="model">{{ model }}</option>
+                }
+            </optgroup>
+            }
+            <option value="manual" class="font-semibold text-primary">Ingresar Manualmente</option>
+        </select>
+
+        @if (modelSelectValue() === 'manual') {
+        <input type="text" [value]="session().model" (input)="updateSession('model', $any($event).target.value)"
+            class="input-base mt-2 animate-fade-in" placeholder="Ej: mi-modelo-custom-v1">
+        }
+    </div>
+</div>

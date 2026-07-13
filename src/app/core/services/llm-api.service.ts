@@ -1,8 +1,8 @@
-// src/app/services/llm-api.service.ts
+// src/app/core/services/llm-api.service.ts
 
 import { Injectable } from '@angular/core';
-import { LlmConfig } from '../models/llm.models';
-import { ApiMessage, ApiPayload, ApiResponse, GeminiResponse, ApiErrorResponse } from '../models/api.types';
+import { GlobalConfig, ChatSession } from '../../models/chat.models';
+import { ApiMessage, ApiPayload, ApiResponse, GeminiResponse, ApiErrorResponse } from '../../models/api.types';
 import { StreamParserService, StreamChunk } from './stream-parser.service';
 
 @Injectable({ providedIn: 'root' })
@@ -12,28 +12,28 @@ export class LlmApiService {
 
     constructor(private parser: StreamParserService) { }
 
-    async send(cfg: LlmConfig, messages: ApiMessage[], stream: boolean): Promise<Response> {
+    async send(session: ChatSession, config: GlobalConfig, messages: ApiMessage[]): Promise<Response> {
         const controller = new AbortController();
         this.controllers.add(controller);
 
         const payload: ApiPayload = {
-            model: cfg.model,
+            model: session.model,
             messages,
-            stream,
-            ...(stream && { stream_options: { include_usage: true } }),
+            stream: config.streamMode,
+            ...(config.streamMode && { stream_options: { include_usage: true } }),
         };
 
-        if (cfg.useParams) {
-            payload.temperature = cfg.temperature;
-            payload.max_tokens = cfg.maxTokens;
+        if (config.useParams) {
+            payload.temperature = config.temperature;
+            payload.max_tokens = config.maxTokens;
         }
 
         try {
-            const response = await fetch(cfg.apiUrl, {
+            const response = await fetch(session.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${cfg.apiToken}`,
+                    'Authorization': `Bearer ${session.apiToken}`,
                 },
                 body: JSON.stringify(payload),
                 signal: controller.signal,
@@ -69,5 +69,4 @@ export class LlmApiService {
     cleanup() {
         this.cancel();
     }
-
 }

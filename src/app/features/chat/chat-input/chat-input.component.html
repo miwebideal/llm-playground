@@ -1,0 +1,100 @@
+<!-- src/app/features/chat/chat-input/chat-input.component.html -->
+
+<div class="border-t border-border-base bg-surface/80 p-4 shrink-0 transition-colors w-full">
+    <div class="max-w-4xl mx-auto space-y-3">
+
+        <!-- Toolbar -->
+        <div class="flex items-center justify-between mb-2">
+            <button (click)="showPromptsModal.set(true)"
+                class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1.5 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm">
+                <svg lucideZap class="w-3 h-3 text-primary"></svg>
+                Ejemplos
+            </button>
+
+            <div class="flex items-center gap-2">
+                <button (click)="regenerateLast()" [disabled]="!canRegenerate()"
+                    class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
+                    <svg lucideRotateCcw class="w-3 h-3 text-primary"></svg> Regenerar
+                </button>
+                <button (click)="clearMessages()" [disabled]="!hasMessages()"
+                    class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
+                    <svg lucideTrash class="w-3 h-3 text-primary"></svg> Borrar
+                </button>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div
+            class="relative flex flex-col w-full bg-surface-alt border border-border-strong rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
+            <div class="flex items-start">
+                <textarea #messageInput [value]="userInput()"
+                    (input)="userInput.set($any($event).target.value); adjustHeight(messageInput)" autocomplete="off"
+                    (keydown)="onKeydown($event)" rows="1" placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
+                    class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-[40vh] overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-text-main placeholder-text-muted"></textarea>
+
+                <div class="p-2 pt-3">
+                    @if (isLoading()) {
+                    <div class="flex items-center gap-1">
+                        <button (click)="stopGenerating()"
+                            class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors shadow-sm cursor-pointer"
+                            title="Detener generación">
+                            <svg lucideSquare class="w-4 h-4"></svg>
+                        </button>
+                        <button (click)="cancelRequest()"
+                            class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors animate-pulse shadow-sm cursor-pointer"
+                            title="Cancelar">
+                            <svg lucideX class="w-4 h-4"></svg>
+                        </button>
+                    </div>
+                    } @else {
+                    <button (click)="sendMessage()" [disabled]="!userInput().trim()"
+                        class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-surface-hover disabled:text-text-muted text-text-inverse cursor-pointer transition-colors shadow-sm"
+                        title="Enviar">
+                        <svg lucideSendHorizontal class="w-4 h-4"></svg>
+                    </button>
+                    }
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between px-4 pb-2 pt-0">
+                <span class="text-xs font-medium text-text-muted/70 select-none">
+                    @if (userInput().length > 0) {
+                    {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{ contextTokens() }}
+                    tokens
+                    } @else {
+                    Shift+Enter nueva línea · Ctrl+K limpiar
+                    }
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Prompts -->
+@if (showPromptsModal()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+    <div class="absolute inset-0 bg-black/50" (click)="showPromptsModal.set(false)"></div>
+    <div
+        class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in border border-border-base flex flex-col max-h-[80vh]">
+        <div class="p-4 border-b border-border-base flex justify-between items-center bg-surface-alt">
+            <h3 class="font-semibold text-text-main flex items-center gap-2">
+                <svg lucideZap class="w-4 h-4"></svg>
+                Ejemplos de Prompts
+            </h3>
+            <button (click)="showPromptsModal.set(false)"
+                class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted hover:text-text-main transition-colors cursor-pointer">
+                <svg lucideX class="w-4 h-4"></svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
+            @for (prompt of quickPrompts; track prompt.title) {
+            <button (click)="setPrompt(prompt.text)"
+                class="text-left p-3 rounded-xl border border-border-base hover:border-primary hover:bg-primary/5 transition-colors group cursor-pointer">
+                <h4 class="text-sm font-semibold text-text-main group-hover:text-primary mb-1">{{ prompt.title }}</h4>
+                <p class="text-xs text-text-muted line-clamp-2">{{ prompt.text }}</p>
+            </button>
+            }
+        </div>
+    </div>
+</div>
+}

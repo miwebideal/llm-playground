@@ -1,0 +1,106 @@
+<!-- src/app/features/sidebar/sidebar.component.html -->
+
+<aside
+    class="h-full bg-surface border-r border-border-base flex flex-col transition-all duration-300 ease-in-out shadow-2xl lg:shadow-none fixed lg:relative pb-20 md:pb-0"
+    [class.w-80]="!isCollapsedDesktop()" [class.lg:w-14]="isCollapsedDesktop()"
+    [class.-translate-x-full]="!isOpenMobile()" [class.translate-x-0]="isOpenMobile()" [class.lg:translate-x-0]="true">
+
+    <!-- ESTADO COLAPSADO (DESKTOP) -->
+    @if (isCollapsedDesktop()) {
+    <div class="hidden lg:flex flex-col items-center py-4 h-full">
+        <button (click)="toggleDesktop()"
+            class="p-2 rounded-xl hover:bg-surface-hover text-text-muted hover:text-primary transition-colors cursor-pointer"
+            title="Expandir configuración">
+            <svg lucideSettings class="w-5 h-5"></svg>
+        </button>
+        <div class="mt-auto">
+            <button (click)="toggleDesktop()"
+                class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors cursor-pointer">
+                <svg lucideChevronRight class="w-4 h-4"></svg>
+            </button>
+        </div>
+    </div>
+    }
+
+    <!-- ESTADO EXPANDIDO -->
+    @if (!isCollapsedDesktop()) {
+    <div class="flex flex-col h-full w-80 animate-fade-in">
+
+        <!-- HEADER MOBILE -->
+        <div class="flex items-center justify-between p-4 lg:hidden border-b border-border-base shrink-0">
+            <span class="font-semibold text-text-main">Configuración</span>
+            <button (click)="closeMobile.emit()"
+                class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors">
+                <svg lucideX class="w-5 h-5"></svg>
+            </button>
+        </div>
+
+        <!-- HEADER DESKTOP -->
+        <div class="hidden lg:flex items-center justify-between p-3 border-b border-border-base shrink-0 ">
+            <span class="font-semibold text-sm text-text-main flex items-center gap-2">
+                <svg lucideSettings class="w-4 h-4 text-primary"></svg> Configuración
+            </span>
+            <button (click)="toggleDesktop()"
+                class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted transition-colors cursor-pointer"
+                title="Colapsar panel">
+                <svg lucideChevronLeft class="w-4 h-4"></svg>
+            </button>
+        </div>
+
+        <!-- MODO COMPARACIÓN Y TABS -->
+        <div class="px-4 py-4 border-b border-border-base bg-surface-alt/30 shrink-0 flex flex-col gap-3 z-10">
+            <label class="flex items-center justify-between cursor-pointer group">
+                <span class="text-sm font-bold text-primary group-hover:text-primary-hover transition-colors">Modo
+                    Comparación</span>
+                <app-toggle [checked]="globalConfig().isCompareMode"
+                    (checkedChange)="updateGlobal('isCompareMode', $event)"></app-toggle>
+            </label>
+
+            <div class="grid transition-all duration-300 ease-in-out"
+                [class]="globalConfig().isCompareMode ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'">
+                <div class="overflow-hidden min-h-0">
+                    <div
+                        class="flex p-1 bg-black/5 dark:bg-white/5 rounded-lg border border-black/5 dark:border-white/5">
+                        @for (session of sessions(); track session.id) {
+                        <button (click)="activeSessionId.set(session.id)"
+                            [class]="activeSessionId() === session.id ? 'bg-surface shadow-sm text-text-main font-semibold' : 'text-text-muted hover:text-text-main'"
+                            class="flex-1 py-1.5 text-xs rounded-md transition-all cursor-pointer">{{ session.name
+                            }}</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR SCROLL -->
+        <div class="p-4 flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-5">
+
+            <!-- CONEXIÓN -->
+            <app-sidebar-connection [sessionId]="activeSessionId()"></app-sidebar-connection>
+
+            <!-- PARÁMETROS GLOBALES -->
+            <div class="pt-4 border-t border-border-base">
+                <app-sidebar-parameters></app-sidebar-parameters>
+            </div>
+
+            <!-- OPCIONES DE CHAT -->
+            <div class="pt-4 border-t border-border-base">
+                <app-sidebar-options></app-sidebar-options>
+            </div>
+
+            <!-- CRÉDITOS -->
+            <div class="text-xs pt-4 border-t border-border-base text-text-muted leading-relaxed mt-auto">
+                <p>Un proyecto de <a href="https://miwebideal.com.ar" target="_blank" rel="noopener noreferrer"
+                        class="text-primary hover:text-primary-hover hover:underline font-medium transition-colors">MiWebIdeal</a>
+                </p>
+                <a href="https://github.com/miwebideal/llm-playground" target="_blank" rel="noopener noreferrer"
+                    class="mt-4 inline-flex items-center text-text-muted hover:text-text-main transition-colors font-medium gap-1">Link
+                    del repo
+                    <svg lucideExternalLink class="w-3.5 h-3.5 text-primary"></svg>
+                </a>
+            </div>
+
+        </div>
+    </div>
+    }
+</aside>

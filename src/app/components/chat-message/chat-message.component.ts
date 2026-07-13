@@ -2,11 +2,11 @@
 
 import { Component, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Message } from '../../models/llm.models';
-import { SafeMarkdownService } from '../../services/safe-markdown.service';
-import { ToastService } from '../../services/toast.service';
+import { Message } from '../../models/chat.models';
+import { SafeMarkdownService } from '../../core/services/safe-markdown.service';
+import { ToastService } from '../../core/services/toast.service';
 import { CodeCopyDirective } from '../../directives/code-copy.directive';
-import { MODEL_PRICING } from '../../utils/chat.constants';
+import { MODEL_PRICING } from '../../constants/pricing.constants';
 
 import {
     LucideCircleAlert, LucideCopy, LucideTrash2,
@@ -58,20 +58,15 @@ export class ChatMessageComponent {
         }
     }
 
-    // Calcula los Tokens por Segundo (TPS) basados en el tiempo real de generación
     getTPS(metrics: Message['metrics']): string | null {
         if (!metrics || !metrics.tokensOut || !metrics.totalTime || !metrics.ttft) return null;
-
         const genTimeSec = (metrics.totalTime - metrics.ttft) / 1000;
         if (genTimeSec <= 0) return null;
-
         return (metrics.tokensOut / genTimeSec).toFixed(1);
     }
 
-    // Calcula el costo estimado del prompt basado en los precios del modelo
     getCost(metrics: Message['metrics'], model?: string): string | null {
         if (!metrics || !metrics.tokensIn || !metrics.tokensOut || !model) return null;
-
         const pricing = MODEL_PRICING[model];
         if (!pricing) return null;
 

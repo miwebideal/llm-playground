@@ -1,6 +1,6 @@
 // src/app/utils/token.utils.ts
 
-import { Message } from "../models";
+import { Message } from "../models/chat.models";
 
 export function estimateTokens(text: string): number {
     if (!text) return 0;
