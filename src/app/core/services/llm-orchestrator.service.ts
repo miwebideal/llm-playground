@@ -1,14 +1,13 @@
-// src/app/services/llm-orchestrator.service.ts
+// src/app/core/services/llm-orchestrator.service.ts
 
 import { Injectable, inject, signal } from '@angular/core';
-import { ConfigStore } from '../stores/config.store';
-import { MessagesStore } from '../stores/messages.store';
+import { GlobalConfigStore } from '../stores/global-config.store';
+import { SessionStore } from '../stores/session.store';
 import { LlmApiService } from './llm-api.service';
 import { MessageBuilderService } from './message-builder.service';
 import { ToastService } from './toast.service';
-import { Message } from '../models/llm.models';
+import { Message } from '../../models/chat.models';
 import { StreamChunk } from './stream-parser.service';
-import { guessProvider } from '../utils/provider.utils';
 
 @Injectable({ providedIn: 'root' })
 export class LlmOrchestratorService {
@@ -16,8 +15,8 @@ export class LlmOrchestratorService {
     private api = inject(LlmApiService);
     private builder = inject(MessageBuilderService);
     private toast = inject(ToastService);
-    private configStore = inject(ConfigStore);
-    private messagesStore = inject(MessagesStore);
+    private configStore = inject(GlobalConfigStore);
+    private sessionStore = inject(SessionStore);
 
     private _isLoading = signal(false);
     readonly isLoading = this._isLoading.asReadonly();
@@ -25,81 +24,87 @@ export class LlmOrchestratorService {
     private stopRequested = signal(false);
     readonly isStopping = this.stopRequested.asReadonly();
 
-    // Cancela la petición HTTP actual de forma abrupta
     cancel() {
         this.stopRequested.set(false);
         this.api.cancel();
     }
 
-    // Detiene la lectura del stream de forma controlada
     stopGenerating() {
         this.stopRequested.set(true);
     }
 
-    // Inicia el envío de un nuevo mensaje del usuario y maneja automáticamente el modo comparación si está activo
+    // Obtiene las sesiones que deben procesarse según el modo
+    private getActiveSessions() {
+        const all = this.sessionStore.sessions();
+        return this.configStore.state().isCompareMode ? all.slice(0, 2) : [all[0]];
+    }
+
     async sendMessage(userContent: string): Promise<void> {
-        const cfg = this.configStore.state();
-        if (!this.configStore.isReady()) {
-            this.toast.warning('Falta configurar API URL, Token o Modelo');
+        const activeSessions = this.getActiveSessions();
+
+        // Validación
+        const invalid = activeSessions.find(s => !s.apiUrl || !s.apiToken || !s.model);
+        if (invalid) {
+            this.toast.warning(`Falta configurar API URL, Token o Modelo en: ${invalid.name}`);
             return;
         }
 
         this._isLoading.set(true);
         this.stopRequested.set(false);
 
-        const userMsg: Message = {
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: userContent,
-            timestamp: new Date()
-        };
-        this.messagesStore.append(userMsg, 'both');
-
-        const tasks = [this.processThread('a', userContent, cfg.streamMode)];
-        if (cfg.isCompareMode) {
-            tasks.push(this.processThread('b', userContent, cfg.streamMode));
+        // 1. Agregar el mensaje del usuario a todas las sesiones activas
+        const userMsgId = crypto.randomUUID();
+        for (const session of activeSessions) {
+            this.sessionStore.addMessage(session.id, {
+                id: userMsgId,
+                role: 'user',
+                content: userContent,
+                timestamp: new Date()
+            });
         }
 
+        // 2. Procesar todas las sesiones en paralelo
+        const tasks = activeSessions.map(session => this.processSession(session.id, userContent));
         await Promise.all(tasks);
+
         this._isLoading.set(false);
     }
 
-    // Procesa un hilo de chat individual (Modelo A o Modelo B)
-    private async processThread(thread: 'a' | 'b', userContent: string, isStream: boolean, existingMessageId?: string) {
-        const cfg = this.configStore.state();
-        const apiUrl = thread === 'a' ? cfg.apiUrl : cfg.apiUrlB;
-        const apiToken = thread === 'a' ? cfg.apiToken : cfg.apiTokenB;
-        const model = thread === 'a' ? cfg.model : cfg.modelB;
+    private async processSession(sessionId: string, userContent: string, existingMessageId?: string) {
+        const config = this.configStore.state();
+        const session = this.sessionStore.sessions().find(s => s.id === sessionId);
+        if (!session) return;
 
         const assistantId = existingMessageId || crypto.randomUUID();
 
         if (!existingMessageId) {
-            this.messagesStore.append({
+            this.sessionStore.addMessage(sessionId, {
                 id: assistantId,
                 role: 'assistant',
                 content: '',
                 timestamp: new Date(),
-                model: model,
-                provider: guessProvider(apiUrl),
+                model: session.model,
+                provider: session.provider,
                 isStreaming: true,
                 metrics: { ttft: 0, totalTime: 0 },
-            }, thread);
+            });
         }
 
-        const threadCfg = { ...cfg, apiUrl, apiToken, model };
-        const apiMessages = this.builder.build(userContent, threadCfg, this.messagesStore.validHistory(thread));
+        // Obtener historial válido de esta sesión
+        const history = session.messages.filter(m => !m.isStreaming && !m.error && m.role !== 'system');
+        const apiMessages = this.builder.build(userContent, config, history);
         const startTime = performance.now();
 
         try {
-            const response = await this.api.send(threadCfg, apiMessages, isStream);
+            const response = await this.api.send(session, config, apiMessages);
             const ttft = performance.now() - startTime;
 
             if (!response.ok) {
-                await this.handleHttpError(response, assistantId);
+                await this.handleHttpError(response, sessionId, assistantId);
                 return;
             }
 
-            if (isStream) {
+            if (config.streamMode) {
                 const reader = response.body?.getReader();
                 if (!reader) throw new Error('No se pudo leer el stream');
                 const decoder = new TextDecoder();
@@ -117,12 +122,12 @@ export class LlmOrchestratorService {
 
                         for (const line of lines) {
                             const chunk = this.api.parseStreamLine(line);
-                            if (chunk) this.applyChunkById(assistantId, chunk, ttft);
+                            if (chunk) this.applyChunk(sessionId, assistantId, chunk, ttft);
                         }
                     }
                     if (buffer) {
                         const chunk = this.api.parseStreamLine(buffer);
-                        if (chunk) this.applyChunkById(assistantId, chunk, ttft);
+                        if (chunk) this.applyChunk(sessionId, assistantId, chunk, ttft);
                     }
                 } finally {
                     reader.releaseLock();
@@ -132,7 +137,7 @@ export class LlmOrchestratorService {
                 const content = this.api.extractContent(data);
                 const finishReason = data.choices?.[0]?.finish_reason || data.candidates?.[0]?.finishReason;
 
-                this.messagesStore.updateById(assistantId, msg => ({
+                this.sessionStore.updateMessage(sessionId, assistantId, msg => ({
                     ...msg,
                     content: existingMessageId ? msg.content + content : content,
                     finishReason: finishReason
@@ -140,7 +145,7 @@ export class LlmOrchestratorService {
             }
 
             const totalTime = performance.now() - startTime;
-            this.messagesStore.updateById(assistantId, msg => ({
+            this.sessionStore.updateMessage(sessionId, assistantId, msg => ({
                 ...msg,
                 isStreaming: false,
                 metrics: {
@@ -153,62 +158,67 @@ export class LlmOrchestratorService {
         } catch (error: unknown) {
             const err = error as Error;
             if (err.name === 'AbortError') {
-                this.messagesStore.updateById(assistantId, msg => ({ ...msg, isStreaming: false }));
+                this.sessionStore.updateMessage(sessionId, assistantId, msg => ({ ...msg, isStreaming: false }));
                 return;
             }
-            this.handleStreamErrorById(assistantId, err.message || 'Error desconocido');
+            this.handleStreamError(sessionId, assistantId, err.message || 'Error desconocido');
         }
     }
 
-    // Continúa la generación de un mensaje que fue interrumpido (ej: por max_tokens)
-    async continueMessage(id: string): Promise<void> {
-        const cfg = this.configStore.state();
-        if (!this.configStore.isReady()) return;
+    async continueMessage(sessionId: string, messageId: string): Promise<void> {
+        const session = this.sessionStore.sessions().find(s => s.id === sessionId);
+        if (!session) return;
 
-        let thread: 'a' | 'b' = 'a';
-        let msgIndex = this.messagesStore.findIndexById(id, 'a');
-        if (msgIndex === -1) {
-            msgIndex = this.messagesStore.findIndexById(id, 'b');
-            thread = 'b';
-        }
-        if (msgIndex === -1) return;
-
-        const targetMsg = thread === 'a' ? this.messagesStore.stateA()[msgIndex] : this.messagesStore.stateB()[msgIndex];
-        if (targetMsg.role !== 'assistant' || targetMsg.isStreaming) return;
+        const targetMsg = session.messages.find(m => m.id === messageId);
+        if (!targetMsg || targetMsg.role !== 'assistant' || targetMsg.isStreaming) return;
 
         this._isLoading.set(true);
         this.stopRequested.set(false);
 
-        this.messagesStore.updateById(id, m => ({ ...m, isStreaming: true, error: undefined }));
+        this.sessionStore.updateMessage(sessionId, messageId, m => ({ ...m, isStreaming: true, error: undefined }));
 
         const continuePrompt = "Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.";
 
-        await this.processThread(thread, continuePrompt, cfg.streamMode, id);
+        await this.processSession(sessionId, continuePrompt, messageId);
         this._isLoading.set(false);
     }
 
-    // Verifica si es posible regenerar el último mensaje
     canRegenerate(): boolean {
-        const lastA = this.messagesStore.last('a');
-        const lastB = this.messagesStore.last('b');
-        const canA = !!lastA && lastA.role === 'assistant' && !lastA.isStreaming && !lastA.error;
-        const canB = !!lastB && lastB.role === 'assistant' && !lastB.isStreaming && !lastB.error;
-        return canA || canB;
+        const activeSessions = this.getActiveSessions();
+        // Se puede regenerar si al menos una sesión activa tiene un último mensaje de asistente válido
+        return activeSessions.some(session => {
+            const last = session.messages[session.messages.length - 1];
+            return last && last.role === 'assistant' && !last.isStreaming && !last.error;
+        });
     }
 
-    // Elimina la última respuesta de la IA y vuelve a enviar el último prompt del usuario
     async regenerateLast(): Promise<void> {
-        const lastUserIdxA = this.messagesStore.findLastUserIndex('a');
-        if (lastUserIdxA === -1) return;
+        const activeSessions = this.getActiveSessions();
+        if (activeSessions.length === 0) return;
 
-        const userContent = this.messagesStore.stateA()[lastUserIdxA].content;
-        this.messagesStore.truncateFrom(lastUserIdxA - 1, 'both');
+        // Buscamos el último mensaje del usuario en la primera sesión activa (debería ser el mismo en todas)
+        const firstSession = activeSessions[0];
+        let lastUserIdx = -1;
+        for (let i = firstSession.messages.length - 1; i >= 0; i--) {
+            if (firstSession.messages[i].role === 'user') {
+                lastUserIdx = i;
+                break;
+            }
+        }
+
+        if (lastUserIdx === -1) return;
+        const userContent = firstSession.messages[lastUserIdx].content;
+
+        // Truncamos los mensajes en todas las sesiones activas
+        for (const session of activeSessions) {
+            this.sessionStore.truncateMessagesFrom(session.id, lastUserIdx - 1);
+        }
 
         await this.sendMessage(userContent);
     }
 
-    private applyChunkById(id: string, chunk: StreamChunk, ttft: number) {
-        this.messagesStore.updateById(id, msg => ({
+    private applyChunk(sessionId: string, messageId: string, chunk: StreamChunk, ttft: number) {
+        this.sessionStore.updateMessage(sessionId, messageId, msg => ({
             ...msg,
             content: msg.content + chunk.content,
             reasoning: chunk.reasoning ? (msg.reasoning || '') + chunk.reasoning : msg.reasoning,
@@ -224,7 +234,7 @@ export class LlmOrchestratorService {
         }));
     }
 
-    private async handleHttpError(response: Response, id: string) {
+    private async handleHttpError(response: Response, sessionId: string, messageId: string) {
         let message = `Error ${response.status}`;
         try {
             const text = await response.text();
@@ -233,17 +243,16 @@ export class LlmOrchestratorService {
             if (response.status === 401) message = 'API Token inválido';
             else if (response.status === 404) message = 'Modelo o URL no encontrados';
         }
-        this.handleStreamErrorById(id, message);
+        this.handleStreamError(sessionId, messageId, message);
     }
 
-    private handleStreamErrorById(id: string, message: string) {
+    private handleStreamError(sessionId: string, messageId: string, message: string) {
         this.toast.error(message);
-        this.messagesStore.updateById(id, msg => ({
+        this.sessionStore.updateMessage(sessionId, messageId, msg => ({
             ...msg,
             isStreaming: false,
             error: message,
             content: msg.content ? `${msg.content}\n\n❌ Error: ${message}` : `❌ Error: ${message}`,
         }));
     }
-
 }

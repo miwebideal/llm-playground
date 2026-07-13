@@ -1,4 +1,11 @@
-// src/app/models/llm.models.ts
+// src/app/models/chat.models.ts
+
+export interface MessageMetrics {
+    ttft?: number;
+    totalTime?: number;
+    tokensIn?: number;
+    tokensOut?: number;
+}
 
 export interface Message {
     id: string;
@@ -9,24 +16,27 @@ export interface Message {
     model?: string;
     provider?: string;
     finishReason?: string;
-    metrics?: {
-        ttft?: number;
-        totalTime?: number;
-        tokensIn?: number;
-        tokensOut?: number;
-    };
+    metrics?: MessageMetrics;
     isStreaming?: boolean;
     error?: string;
 }
 
-export interface LlmConfig {
+export interface ChatSession {
+    id: string;
+    name: string; // Ej: "Modelo A", "Modelo B"
     apiUrl: string;
     apiToken: string;
     model: string;
+    provider: string;
+    messages: Message[];
+}
+
+export interface GlobalConfig {
     temperature: number;
     maxTokens: number;
     systemPrompt: string;
+    useParams: boolean;
     includeHistory: boolean;
     streamMode: boolean;
-    useParams: boolean; 
+    isCompareMode: boolean;
 }

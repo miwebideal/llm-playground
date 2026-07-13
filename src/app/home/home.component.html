@@ -2,257 +2,34 @@
 
 <div class="h-dvh flex flex-col bg-background text-text-main overflow-hidden transition-colors">
 
-    <app-header (toggleConfig)="configOpen.set(!configOpen())" (exportJson)="onExportJson()" (exportMd)="onExportMd()"
-        (copyChat)="onCopyChat()">
+    <app-header (toggleConfig)="configOpenMobile.set(!configOpenMobile())" (exportJson)="onExportJson()"
+        (exportMd)="onExportMd()" (copyChat)="onCopyChat()">
     </app-header>
 
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- SIDEBAR MODULAR -->
-        <div class="fixed lg:static inset-y-0 left-0 z-30 w-80 lg:w-80 shrink-0 transition-transform duration-300 ease-in-out will-change-transform"
-            [class.-translate-x-full]="!configOpen()" [class.translate-x-0]="configOpen()"
-            [class.lg:translate-x-0]="true">
-            <app-sidebar [isOpen]="configOpen()" (closeSidebar)="configOpen.set(false)"></app-sidebar>
+        <!-- WRAPPER DEL SIDEBAR -->
+        <div class="z-40 shrink-0 h-full">
+            <app-sidebar [isOpenMobile]="configOpenMobile()" (closeMobile)="configOpenMobile.set(false)"></app-sidebar>
         </div>
 
-        <!-- Overlay móvil -->
-        @if (configOpen()) {
-        <div (click)="configOpen.set(false)"
-            class="lg:hidden fixed inset-0 bg-black/50 z-20 transition-opacity duration-300"></div>
+        <!-- OVERLAY -->
+        @if (configOpenMobile()) {
+        <div (click)="configOpenMobile.set(false)"
+            class="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"></div>
         }
 
         <!-- CHAT AREA -->
         <main class="flex-1 flex flex-col min-w-0 bg-background relative transition-colors">
 
-            <!-- TABS MOBILE -->
-            @if (config().isCompareMode) {
-            <div class="flex lg:hidden border-b border-border-base bg-surface-alt shrink-0">
-                <button (click)="activeTab.set('a')"
-                    [class]="activeTab() === 'a' ? 'border-b-2 border-model-a text-model-a font-medium' : 'border-b-2 border-transparent text-text-muted hover:text-text-main'"
-                    class="flex-1 py-3 text-sm transition-colors">
-                    Modelo A @if (providerA() !== 'unknown') { <span class="opacity-75 font-normal capitalize">· {{
-                        providerA() }}</span> }
-                </button>
-
-                <div class="w-px bg-border-strong my-2.5 rounded-full"></div>
-
-                <button (click)="activeTab.set('b')"
-                    [class]="activeTab() === 'b' ? 'border-b-2 border-model-b text-model-b font-medium' : 'border-b-2 border-transparent text-text-muted hover:text-text-main'"
-                    class="flex-1 py-3 text-sm transition-colors">
-                    Modelo B @if (providerB() !== 'unknown') { <span class="opacity-75 font-normal capitalize">· {{
-                        providerB() }}</span> }
-                </button>
-            </div>
-            }
-
-            <!-- CONTENEDOR DE MENSAJES -->
+            <!-- WRAPPER DEL LAYOUT -->
             <div class="flex-1 flex overflow-hidden">
-
-                <!-- Columna A -->
-                <div class="flex-1 flex flex-col min-w-0"
-                    [class.max-lg:hidden]="config().isCompareMode && activeTab() !== 'a'"
-                    [class.border-r]="config().isCompareMode" [class.border-border-base]="config().isCompareMode">
-
-                    <!-- Header Fijo Modelo A -->
-                    @if (config().isCompareMode) {
-                    <div class="bg-surface-alt/80 px-4 py-2.5 border-b border-border-base hidden lg:block shrink-0">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Modelo A</span>
-                            @if (providerA() !== 'unknown') {
-                            <span
-                                class="text-xs px-1.5 rounded bg-model-a-bg text-model-a-text font-semibold capitalize">{{
-                                providerA() }}</span>
-                            }
-                        </div>
-                        <div class="text-sm font-medium truncate text-model-a"
-                            [title]="config().model || 'Sin configurar'">
-                            {{ config().model || 'Sin configurar' }}
-                        </div>
-                    </div>
-                    }
-
-                    <!-- Scroll Area A -->
-                    <div #messagesContainer class="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth">
-                        @if (messagesA().length === 0) {
-                        <div class="h-full flex flex-col items-center justify-center text-text-muted space-y-4">
-                            <div class="w-16 h-16 rounded-2xl bg-surface-alt flex items-center justify-center">
-                                <svg lucideMessageSquare class="w-8 h-8"></svg>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-lg font-medium text-text-main">Comienza una conversación</p>
-                                <p class="text-sm mt-1">Configura tu API y empieza a probar modelos</p>
-                            </div>
-                        </div>
-                        }
-
-                        @for (msg of messagesA(); track msg.id) {
-                        <app-chat-message [msg]="msg" (onDelete)="deleteMessage($event)"
-                            (onContinue)="continueMessage($event)"></app-chat-message>
-                        }
-                    </div>
-                </div>
-
-                <!-- Columna B -->
-                @if (config().isCompareMode) {
-                <div class="flex-1 flex flex-col min-w-0" [class.max-lg:hidden]="activeTab() !== 'b'">
-
-                    <!-- Header Fijo Modelo B -->
-                    <div class="bg-surface-alt/80 px-4 py-2.5 border-b border-border-base hidden lg:block shrink-0">
-                        <div class="flex items-center gap-2 mb-0.5">
-                            <span class="text-xs font-bold text-text-muted uppercase tracking-wider">Modelo B</span>
-                            @if (providerB() !== 'unknown') {
-                            <span
-                                class="text-xs px-1.5 rounded bg-model-b-bg text-model-b-text font-semibold capitalize">{{
-                                providerB() }}</span>
-                            }
-                        </div>
-                        <div class="text-sm font-medium truncate text-model-b"
-                            [title]="config().modelB || 'Sin configurar'">
-                            {{ config().modelB || 'Sin configurar' }}
-                        </div>
-                    </div>
-
-                    <!-- Scroll Area B -->
-                    <div #messagesContainerB class="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth">
-                        @if (messagesB().length === 0) {
-                        <div class="h-full flex flex-col items-center justify-center text-text-muted space-y-4">
-                            <div class="w-16 h-16 rounded-2xl bg-surface-alt flex items-center justify-center">
-                                <svg lucideMessageSquare class="w-8 h-8"></svg>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-lg font-medium text-text-main">Esperando mensajes...</p>
-                            </div>
-                        </div>
-                        }
-
-                        @for (msg of messagesB(); track msg.id) {
-                        <app-chat-message [msg]="msg" (onDelete)="deleteMessage($event)"
-                            (onContinue)="continueMessage($event)"></app-chat-message>
-                        }
-                    </div>
-                </div>
-                }
+                <app-chat-layout class="flex-1 flex w-full"></app-chat-layout>
             </div>
 
-            <!-- Input Area -->
-            <div class="border-t border-border-base bg-surface/80 p-4 shrink-0 transition-colors">
-                <div class="max-w-4xl mx-auto space-y-3">
-
-                    <!-- Toolbar -->
-                    <div class="flex items-center justify-between">
-
-                        <!-- Indicadores Interactivos -->
-                        <div class="flex items-center gap-2">
-                            <button (click)="toggleHistory()"
-                                class="min-w-22 flex items-center justify-center px-2.5 py-1 rounded-full border text-[10px] font-medium transition-all select-none cursor-pointer shadow-sm"
-                                [class]="config().includeHistory 
-                                    ? 'bg-primary border-primary text-text-inverse hover:bg-primary-hover' 
-                                    : 'bg-transparent border-border-strong text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5'">
-                                Historial {{ config().includeHistory ? 'ON' : 'OFF' }}
-                            </button>
-
-                            <button (click)="toggleStream()"
-                                class="min-w-19 flex items-center justify-center px-2.5 py-1 rounded-full border text-[10px] font-medium transition-all select-none cursor-pointer shadow-sm"
-                                [class]="config().streamMode 
-                                    ? 'bg-primary border-primary text-text-inverse hover:bg-primary-hover' 
-                                    : 'bg-transparent border-border-strong text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5'">
-                                Stream {{ config().streamMode ? 'ON' : 'OFF' }}
-                            </button>
-                        </div>
-
-
-                        <!-- Botones de Acción (Cápsulas) -->
-                        <div class="flex items-center gap-2">
-                            <!-- REGENERAR: Ahora usa primary (violeta) -->
-                            <button (click)="regenerateLast()" [disabled]="!canRegenerate()"
-                                class="px-2.5 py-1 rounded-full border border-border-strong text-[10px] font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-30 disabled:hover:text-text-muted disabled:hover:border-border-strong disabled:hover:bg-transparent disabled:cursor-not-allowed shadow-sm"
-                                title="Regenerar última respuesta">
-                                <svg lucideRotateCcw class="w-3 h-3"></svg> Regenerar
-                            </button>
-
-                            <!-- LIMPIAR: Mantiene error (rojo) -->
-                            <button (click)="clearMessages()"
-                                [disabled]="messagesA().length === 0 && messagesB().length === 0"
-                                class="px-2.5 py-1 rounded-full border border-border-strong text-[10px] font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-error hover:border-error/50 hover:bg-error/5 disabled:opacity-30 disabled:hover:text-text-muted disabled:hover:border-border-strong disabled:hover:bg-transparent disabled:cursor-not-allowed shadow-sm">
-                                <svg lucideTrash class="w-3 h-3"></svg> Limpiar chat{{ config().isCompareMode ? 's' : ''
-                                }}
-                            </button>
-                        </div>
-
-                    </div>
-
-                    <!-- Quick Prompts -->
-                    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                        @for (prompt of quickPrompts; track prompt.title) {
-                        <!-- QUICK PROMPTS: Estilo cápsula con sombra y hover violeta -->
-                        <button (click)="setPrompt(prompt.text)"
-                            class="shrink-0 px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-full border border-border-strong text-text-muted transition-all hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm select-none cursor-pointer">
-                            {{ prompt.title }}
-                        </button>
-                        }
-                    </div>
-
-                    <!-- Input -->
-                    <div
-                        class="relative flex flex-col w-full bg-surface-alt border border-border-strong rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
-                        <div class="flex items-start">
-
-                            <textarea #messageInput [value]="userInput()"
-                                (input)="userInput.set($any($event).target.value); adjustHeight(messageInput)"
-                                autocomplete="off" (keydown)="onKeydown($event)" rows="1"
-                                placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
-                                aria-label="Escribe tu mensaje"
-                                class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-[40vh] overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-text-main placeholder-text-muted"></textarea>
-
-                            <div class="p-2 pt-3">
-                                @if (isLoading()) {
-                                <div class="flex items-center gap-1">
-                                    <!-- STOP: Ahora es violeta (primary) -->
-                                    <button (click)="stopGenerating()"
-                                        class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors shadow-sm cursor-pointer"
-                                        title="Detener generación">
-                                        <svg lucideSquare class="w-4 h-4"></svg>
-                                    </button>
-                                    <!-- CANCEL: Mantiene rojo (error) -->
-                                    <button (click)="cancelRequest()"
-                                        class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors animate-pulse shadow-sm cursor-pointer"
-                                        title="Cancelar">
-                                        <svg lucideX class="w-4 h-4"></svg>
-                                    </button>
-                                </div>
-                                } @else {
-                                <!-- SEND: Violeta (primary) -->
-                                <button (click)="sendMessage()" [disabled]="!userInput().trim()"
-                                    class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-surface-hover disabled:text-text-muted text-text-inverse cursor-pointer transition-colors shadow-sm"
-                                    title="Enviar">
-                                    <svg lucideSendHorizontal class="w-4 h-4"></svg>
-                                </button>
-                                }
-                            </div>
-                        </div>
-
-                        <!-- Footer con contador -->
-                        <div class="flex items-center justify-between px-4 pb-2 pt-0">
-                            <span class="text-[10px] font-medium text-text-muted select-none">
-                                @if (userInput().length > 0) {
-                                {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{
-                                contextTokens() }} tokens
-                                } @else {
-                                Shift+Enter nueva línea · Ctrl+K limpiar
-                                }
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Warning -->
-                    @if (!hasConfig()) {
-                    <p class="text-xs text-warning flex items-center gap-1">
-                        <svg lucideCircleAlert class="w-3 h-3"></svg>
-                        Configura la URL, token y modelo en el panel lateral para empezar
-                    </p>
-                    }
-
-                </div>
+            <!-- WRAPPER DEL INPUT -->
+            <div class="shrink-0 w-full">
+                <app-chat-input></app-chat-input>
             </div>
 
         </main>
