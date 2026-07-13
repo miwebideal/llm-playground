@@ -18,10 +18,6 @@ export const QUICK_PROMPTS = [
         text: 'Explica el concepto de "Computación Cuántica" como si se lo estuvieras explicando a un niño de 10 años, usando analogías simples.'
     },
     {
-        title: '✍️ Escritura con Restricción',
-        text: 'Escribe una historia de terror de exactamente tres párrafos. El primer párrafo debe terminar con la palabra "silencio", el segundo con "sombra" y el tercero con "nunca". No uses la palabra "miedo" en ningún momento.'
-    },
-    {
         title: '⚖️ Dilema Ético',
         text: 'Analiza el impacto del uso de inteligencia artificial en la creación artística. Presenta dos argumentos sólidos a favor (como democratización) y dos en contra (como propiedad intelectual), y concluye con una reflexión neutral sobre el futuro del arte.'
     },

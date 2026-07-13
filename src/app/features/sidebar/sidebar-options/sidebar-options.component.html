@@ -1,0 +1,16 @@
+<!-- src/app/features/sidebar/sidebar-options/sidebar-options.component.html -->
+
+<div class="flex flex-col gap-3">
+    <span class="label-base">Opciones de Chat</span>
+    <div class="flex flex-col gap-2">
+        <label class="flex items-center justify-between cursor-pointer group">
+            <span class="text-sm text-text-main group-hover:text-primary transition-colors">Incluir Historial</span>
+            <app-toggle [checked]="config().includeHistory"
+                (checkedChange)="update('includeHistory', $event)"></app-toggle>
+        </label>
+        <label class="flex items-center justify-between cursor-pointer group">
+            <span class="text-sm text-text-main group-hover:text-primary transition-colors">Modo Stream</span>
+            <app-toggle [checked]="config().streamMode" (checkedChange)="update('streamMode', $event)"></app-toggle>
+        </label>
+    </div>
+</div>

@@ -11,7 +11,7 @@
             class="flex-1 py-3 text-sm transition-colors flex items-center justify-center gap-1">
             {{ session.name }}
             @if (session.provider && session.provider !== 'unknown') {
-            <span class="opacity-75 font-normal capitalize text-xs">· {{ session.provider }}</span>
+            <span class="opacity-75 capitalize ">· {{ session.provider }}</span>
             }
         </button>
         @if (i === 0) { <div class="w-px bg-border-strong my-2.5 rounded-full"></div> }
@@ -28,9 +28,10 @@
         <div class="flex flex-col min-w-0 h-full transition-all max-lg:w-full!"
             [class.max-lg:hidden]="activeSessions.length > 1 && activeMobileTab() !== i"
             [style.width.%]="activeSessions.length > 1 && i === 0 ? leftColumnWidth() : (activeSessions.length > 1 && i === 1 ? 100 - leftColumnWidth() : 100)">
-            
-            <app-chat-column class="flex-1 flex flex-col overflow-hidden" [session]="session" [isCompareMode]="activeSessions.length > 1"></app-chat-column>
-            
+
+            <app-chat-column class="flex-1 flex flex-col overflow-hidden" [session]="session"
+                [isCompareMode]="activeSessions.length > 1"></app-chat-column>
+
         </div>
 
         <!-- DIVISOR -->

@@ -118,7 +118,7 @@ export class ChatInputComponent {
     async clearMessages() {
         const isCompare = this.configStore.state().isCompareMode;
         const confirmed = await this.modalService.confirm({
-            title: isCompare ? 'Limpiar chats' : 'Limpiar historial',
+            title: isCompare ? 'Borrar chats' : 'Borrar historial',
             message: '¿Estás seguro de que querés borrar el historial? Esta acción no se puede deshacer.',
             confirmText: 'Sí, borrar',
             cancelText: 'Cancelar',
