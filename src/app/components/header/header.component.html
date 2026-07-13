@@ -1,7 +1,7 @@
 <!-- src/app/components/header/header.component.html -->
 
 <header
-    class="flex lg:pl-4 lg:pr-12 items-center justify-between px-4 py-3 bg-surface border-b border-border-base shrink-0 transition-colors relative z-50">
+    class="flex lg:pl-4 lg:pr-8 items-center justify-between px-4 py-3 bg-surface border-b border-border-base shrink-0 transition-colors relative z-50">
 
     <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
@@ -15,7 +15,7 @@
 
     <div class="flex items-center gap-2">
 
-        <!-- Theme toggle -->
+        <!-- THEME -->
         <button (click)="theme.toggle()" class="btn-icon flex items-center justify-center w-8 h-8" title="Alternar tema"
             aria-label="Alternar tema">
             @if (theme.isDark()) {
@@ -25,14 +25,13 @@
             }
         </button>
 
-        <!-- Exportar Dropdown -->
+        <!-- EXPORT MENU -->
         <div class="relative">
 
             @if (isExportMenuOpen()) {
             <div class="fixed inset-0 z-40" (click)="closeExportMenu()"></div>
             }
 
-            <!-- Botón Principal -->
             <button (click)="toggleExportMenu()"
                 class="relative z-50 flex items-center gap-1.5 h-8 px-3 rounded-lg bg-primary text-text-inverse hover:bg-primary-hover transition-colors shadow-sm cursor-pointer"
                 title="Opciones de exportación">
@@ -42,7 +41,6 @@
                     [class.rotate-180]="isExportMenuOpen()"></svg>
             </button>
 
-            <!-- Menú Desplegable -->
             <div class="absolute right-0 top-full mt-2 w-48 bg-surface border border-border-base rounded-xl shadow-xl z-50 overflow-hidden transition-all duration-200 origin-top-right"
                 [class]="isExportMenuOpen() ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'">
 
@@ -68,8 +66,8 @@
             </div>
         </div>
 
-        <!-- Menu mobile -->
-        <button (click)="toggleConfig.emit()" class="btn-icon flex items-center justify-center w-8 h-8"
+        <!-- MENU MOBILE -->
+        <button (click)="toggleConfig.emit()" class="flex md:hidden btn-icon items-center justify-center w-8 h-8"
             aria-label="Abrir menú">
             <svg lucideMenu class="w-4 h-4"></svg>
         </button>

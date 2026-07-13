@@ -6,8 +6,8 @@ import { SessionStore } from '../stores/session.store';
 import { LlmApiService } from './llm-api.service';
 import { MessageBuilderService } from './message-builder.service';
 import { ToastService } from './toast.service';
-import { Message } from '../../models/chat.models';
 import { StreamChunk } from './stream-parser.service';
+import { ProviderStore } from '../stores/provider.store';
 
 @Injectable({ providedIn: 'root' })
 export class LlmOrchestratorService {
@@ -17,6 +17,7 @@ export class LlmOrchestratorService {
     private toast = inject(ToastService);
     private configStore = inject(GlobalConfigStore);
     private sessionStore = inject(SessionStore);
+    private providerStore = inject(ProviderStore);
 
     private _isLoading = signal(false);
     readonly isLoading = this._isLoading.asReadonly();
@@ -43,10 +44,12 @@ export class LlmOrchestratorService {
         const activeSessions = this.getActiveSessions();
 
         // Validación
-        const invalid = activeSessions.find(s => !s.apiUrl || !s.apiToken || !s.model);
-        if (invalid) {
-            this.toast.warning(`Falta configurar API URL, Token o Modelo en: ${invalid.name}`);
-            return;
+        for (const session of activeSessions) {
+            const provider = this.providerStore.providers().find(p => p.id === session.providerId);
+            if (!provider || !provider.apiUrl || !provider.apiToken || !session.model) {
+                this.toast.warning(`Falta configurar API URL, Token o Modelo en: ${session.name}`);
+                return;
+            }
         }
 
         this._isLoading.set(true);
@@ -71,11 +74,14 @@ export class LlmOrchestratorService {
     }
 
     private async processSession(sessionId: string, userContent: string, existingMessageId?: string) {
+
         const config = this.configStore.state();
         const session = this.sessionStore.sessions().find(s => s.id === sessionId);
         if (!session) return;
 
         const assistantId = existingMessageId || crypto.randomUUID();
+        const provider = this.providerStore.providers().find(p => p.id === session.providerId);
+        if (!provider) return;
 
         if (!existingMessageId) {
             this.sessionStore.addMessage(sessionId, {
@@ -84,7 +90,7 @@ export class LlmOrchestratorService {
                 content: '',
                 timestamp: new Date(),
                 model: session.model,
-                provider: session.provider,
+                provider: provider.id,
                 isStreaming: true,
                 metrics: { ttft: 0, totalTime: 0 },
             });
@@ -92,11 +98,11 @@ export class LlmOrchestratorService {
 
         // Obtener historial válido de esta sesión
         const history = session.messages.filter(m => !m.isStreaming && !m.error && m.role !== 'system');
-        const apiMessages = this.builder.build(userContent, config, history);
+        const apiMessages = this.builder.build(userContent, session, config, history);
         const startTime = performance.now();
 
         try {
-            const response = await this.api.send(session, config, apiMessages);
+            const response = await this.api.send(provider, session, config, apiMessages);
             const ttft = performance.now() - startTime;
 
             if (!response.ok) {

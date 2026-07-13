@@ -22,8 +22,8 @@ export const QUICK_PROMPTS = [
         text: 'Analiza el impacto del uso de inteligencia artificial en la creación artística. Presenta dos argumentos sólidos a favor (como democratización) y dos en contra (como propiedad intelectual), y concluye con una reflexión neutral sobre el futuro del arte.'
     },
     {
-        title: '🧩 Lógica Inversa + JSON Estricto',
-        text: 'Hay 3 cajas: Roja, Azul y Verde. La caja Roja dice: "El oro no está aquí". La Azul dice: "El oro está en la caja Verde". La Verde dice: "El oro no está en la caja Azul". Sabiendo que EXACTAMENTE DOS de estas afirmaciones son FALSAS, determina dónde está el oro. Tu respuesta DEBE ser ÚNICAMENTE un objeto JSON válido con este formato exacto: {"razonamiento": ["paso 1", "paso 2"], "caja_correcta": "color"}. No agregues saludos, no uses bloques de código markdown (```json), ni des explicaciones fuera del objeto.'
+        title: '🧩 Lógica Inversa',
+        text: 'Hay 3 cajas: Roja, Azul y Verde. La caja Roja dice: "El oro no está aquí". La Azul dice: "El oro está en la caja Verde". La Verde dice: "El oro no está en la caja Azul". Sabiendo que EXACTAMENTE DOS de estas afirmaciones son FALSAS, determina dónde está el oro. Explica tu razonamiento paso a paso antes de dar la respuesta final.'
     },
     {
         title: '🔤 Lipograma Técnico Extremo',

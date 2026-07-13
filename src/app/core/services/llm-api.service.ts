@@ -1,7 +1,7 @@
 // src/app/core/services/llm-api.service.ts
 
 import { Injectable } from '@angular/core';
-import { GlobalConfig, ChatSession } from '../../models/chat.models';
+import { GlobalConfig, ChatSession, ProviderConfig } from '../../models/chat.models';
 import { ApiMessage, ApiPayload, ApiResponse, GeminiResponse, ApiErrorResponse } from '../../models/api.types';
 import { StreamParserService, StreamChunk } from './stream-parser.service';
 
@@ -12,7 +12,7 @@ export class LlmApiService {
 
     constructor(private parser: StreamParserService) { }
 
-    async send(session: ChatSession, config: GlobalConfig, messages: ApiMessage[]): Promise<Response> {
+    async send(provider: ProviderConfig, session: ChatSession, config: GlobalConfig, messages: ApiMessage[]): Promise<Response> {
         const controller = new AbortController();
         this.controllers.add(controller);
 
@@ -23,17 +23,17 @@ export class LlmApiService {
             ...(config.streamMode && { stream_options: { include_usage: true } }),
         };
 
-        if (config.useParams) {
-            payload.temperature = config.temperature;
-            payload.max_tokens = config.maxTokens;
+        if (session.useParams) {
+            payload.temperature = session.temperature;
+            payload.max_tokens = session.maxTokens;
         }
 
         try {
-            const response = await fetch(session.apiUrl, {
+            const response = await fetch(provider.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.apiToken}`,
+                    'Authorization': `Bearer ${provider.apiToken}`,
                 },
                 body: JSON.stringify(payload),
                 signal: controller.signal,

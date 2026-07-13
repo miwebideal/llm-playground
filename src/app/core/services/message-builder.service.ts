@@ -1,7 +1,7 @@
 // src/app/core/services/message-builder.service.ts
 
 import { Injectable } from '@angular/core';
-import { GlobalConfig, Message } from '../../models/chat.models';
+import { ChatSession, GlobalConfig, Message } from '../../models/chat.models';
 import { ApiMessage } from '../../models/api.types';
 
 @Injectable({ providedIn: 'root' })
@@ -9,13 +9,14 @@ export class MessageBuilderService {
 
     build(
         userContent: string,
+        session: ChatSession,
         config: GlobalConfig,
         history: Message[]
     ): ApiMessage[] {
         const result: ApiMessage[] = [];
 
-        if (config.useParams && config.systemPrompt?.trim()) {
-            result.push({ role: 'system', content: config.systemPrompt });
+        if (session.useParams && session.systemPrompt?.trim()) {
+            result.push({ role: 'system', content: session.systemPrompt });
         }
 
         if (config.includeHistory) {

@@ -4,8 +4,8 @@ import { Component, inject, output, signal } from '@angular/core';
 import { ThemeService } from '../../core/services/theme.service';
 
 import {
-    LucideZap, LucideMenu, LucideSun, LucideMoon,
-    LucideDownload, LucideCopy, LucideFileBraces, LucideFileText, LucideChevronDown
+    LucideZap, LucideMenu, LucideSun, LucideMoon, LucideDownload, LucideCopy, LucideFileBraces,
+    LucideFileText, LucideChevronDown
 } from '@lucide/angular';
 
 @Component({

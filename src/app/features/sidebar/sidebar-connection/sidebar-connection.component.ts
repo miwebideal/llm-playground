@@ -3,7 +3,8 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SessionStore } from '../../../core/stores/session.store';
-import { API_PRESETS, API_PRESET_KEYS, AI_MODELS } from '../../../constants/models.constants';
+import { ProviderStore } from '../../../core/stores/provider.store';
+import { AI_MODELS } from '../../../constants/models.constants';
 
 import { LucideEye, LucideEyeOff } from '@lucide/angular';
 
@@ -15,40 +16,41 @@ import { LucideEye, LucideEyeOff } from '@lucide/angular';
 export class SidebarConnectionComponent {
 
     sessionId = input.required<string>();
+
     private sessionStore = inject(SessionStore);
+    private providerStore = inject(ProviderStore);
 
     session = computed(() => this.sessionStore.sessions().find(s => s.id === this.sessionId())!);
+    providers = this.providerStore.providers;
 
-    presetKeys = API_PRESET_KEYS;
-    modelGroups = Object.keys(AI_MODELS);
-    aiModels = AI_MODELS;
+    activeProvider = computed(() => this.providers().find(p => p.id === this.session().providerId));
 
     showToken = signal(false);
-    forceManualApi = signal(false);
     forceManualModel = signal(false);
 
-    apiUrlSelectValue = computed(() => {
-        if (this.forceManualApi()) return 'manual';
-        const currentUrl = this.session().apiUrl;
-        const preset = Object.entries(API_PRESETS).find(([k, v]) => v.apiUrl === currentUrl);
-        return preset ? preset[0] : 'manual';
+    // Mapeo simple para conectar el ID del proveedor con la lista de modelos
+    private modelKeys: Record<string, string> = {
+        'openai': 'OpenAI', 'deepinfra': 'DeepInfra', 'fireworks': 'Fireworks AI',
+        'gemini': 'Gemini', 'openrouter': 'OpenRouter', 'groq': 'Groq', 'together': 'Together AI'
+    };
+
+    availableModels = computed(() => {
+        const provId = this.session().providerId;
+        const key = this.modelKeys[provId];
+        return key ? AI_MODELS[key] || [] : [];
     });
 
     modelSelectValue = computed(() => {
         if (this.forceManualModel()) return 'manual';
         const currentModel = this.session().model;
-        const allModels = Object.values(AI_MODELS).flat();
-        return allModels.includes(currentModel) ? currentModel : 'manual';
+        const exists = this.availableModels().some(m => m.id === currentModel);
+        return exists ? currentModel : 'manual';
     });
 
-    onApiUrlSelect(event: Event) {
+    onProviderSelect(event: Event) {
         const val = (event.target as HTMLSelectElement).value;
-        if (val === 'manual') {
-            this.forceManualApi.set(true);
-        } else {
-            this.forceManualApi.set(false);
-            this.sessionStore.updateSession(this.sessionId(), { apiUrl: API_PRESETS[val].apiUrl, provider: val });
-        }
+        this.sessionStore.updateSession(this.sessionId(), { providerId: val, model: '' });
+        this.forceManualModel.set(false);
     }
 
     onModelSelect(event: Event) {
@@ -61,8 +63,17 @@ export class SidebarConnectionComponent {
         }
     }
 
-    updateSession(key: 'apiUrl' | 'apiToken' | 'model', value: string) {
-        this.sessionStore.updateSession(this.sessionId(), { [key]: value });
+    updateProviderToken(value: string) {
+        const provId = this.session().providerId;
+        this.providerStore.updateProvider(provId, { apiToken: value });
     }
 
+    updateProviderUrl(value: string) {
+        const provId = this.session().providerId;
+        this.providerStore.updateProvider(provId, { apiUrl: value });
+    }
+
+    updateSessionModel(value: string) {
+        this.sessionStore.updateSession(this.sessionId(), { model: value });
+    }
 }

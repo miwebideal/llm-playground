@@ -6,10 +6,6 @@ import { GlobalConfig } from '../../models/chat.models';
 const STORAGE_KEY = 'llm-global-config-v2';
 
 const DEFAULT_CONFIG: GlobalConfig = {
-    temperature: 0.7,
-    maxTokens: 8192,
-    systemPrompt: 'You are a helpful assistant.',
-    useParams: true,
     includeHistory: true,
     streamMode: false,
     isCompareMode: false,
@@ -48,12 +44,4 @@ export class GlobalConfigStore {
         this._state.update(current => ({ ...current, ...partial }));
     }
 
-    resetParams() {
-        this.update({
-            temperature: 0.7,
-            maxTokens: 8192,
-            systemPrompt: 'You are a helpful assistant.',
-            useParams: true,
-        });
-    }
 }

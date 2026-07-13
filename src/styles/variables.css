@@ -23,16 +23,6 @@
     --primary-bg: #ede9fe;
     --primary-text: #6d28d9;
 
-    /* Modelo A */
-    --model-a: #7c3aed;
-    --model-a-bg: #ede9fe;
-    --model-a-text: #6d28d9;
-
-    /* Modelo B */
-    --model-b: #059669;
-    --model-b-bg: #d1fae5;
-    --model-b-text: #047857;
-
     /* Estados */
     --success: #10b981;
     --success-bg: #d1fae5;
@@ -78,16 +68,6 @@
     --primary-hover: #7c3aed;
     --primary-bg: rgba(139, 92, 246, 0.15);
     --primary-text: #c4b5fd;
-
-    /* Modelo A Dark */
-    --model-a: #8b5cf6;
-    --model-a-bg: rgba(139, 92, 246, 0.15);
-    --model-a-text: #c4b5fd;
-
-    /* Modelo B Dark */
-    --model-b: #10b981;
-    --model-b-bg: rgba(16, 185, 129, 0.15);
-    --model-b-text: #6ee7b7;
 
     /* Estados Dark */
     --success: #10b981;
