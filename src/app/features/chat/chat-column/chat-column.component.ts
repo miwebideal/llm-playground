@@ -24,7 +24,7 @@ export class ChatColumnComponent {
     private sessionStore = inject(SessionStore);
 
     constructor() {
-        // Lógica de auto-scroll aislada por columna
+
         effect((onCleanup) => {
             const el = this.messagesContainerRef()?.nativeElement;
             if (el) {
@@ -38,6 +38,7 @@ export class ChatColumnComponent {
                 onCleanup(() => obs.disconnect());
             }
         });
+
     }
 
     deleteMessage(msgId: string) {

@@ -9,11 +9,11 @@ import { ChatInputComponent } from '../features/chat/chat-input/chat-input.compo
 import { ExportService } from '../core/services/export.service';
 import { SessionStore } from '../core/stores/session.store';
 import { GlobalConfigStore } from '../core/stores/global-config.store';
+import { ProviderStore } from '../core/stores/provider.store';
 
 @Component({
     selector: 'app-home',
-    imports: [CommonModule, HeaderComponent, SidebarComponent, ChatLayoutComponent, ChatInputComponent
-    ],
+    imports: [CommonModule, HeaderComponent, SidebarComponent, ChatLayoutComponent, ChatInputComponent],
     templateUrl: './home.component.html',
 })
 export class HomeComponent {
@@ -21,8 +21,9 @@ export class HomeComponent {
     configOpenMobile = signal(false);
 
     private exportService = inject(ExportService);
-    private sessionStore = inject(SessionStore);
     private configStore = inject(GlobalConfigStore);
+    sessionStore = inject(SessionStore);
+    providerStore = inject(ProviderStore);
 
     onExportJson() {
         this.exportService.exportChat(this.sessionStore.sessions(), this.configStore.state());

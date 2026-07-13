@@ -21,21 +21,26 @@ export interface Message {
     error?: string;
 }
 
-export interface ChatSession {
+export interface ProviderConfig {
     id: string;
-    name: string; // Ej: "Modelo A", "Modelo B"
+    name: string;
     apiUrl: string;
     apiToken: string;
-    model: string;
-    provider: string;
-    messages: Message[];
 }
 
-export interface GlobalConfig {
+export interface ChatSession {
+    id: string;
+    name: string;
+    providerId: string;
+    model: string;
+    messages: Message[];
+    useParams: boolean;
     temperature: number;
     maxTokens: number;
     systemPrompt: string;
-    useParams: boolean;
+}
+
+export interface GlobalConfig {
     includeHistory: boolean;
     streamMode: boolean;
     isCompareMode: boolean;

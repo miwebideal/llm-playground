@@ -1,5 +1,7 @@
 <!-- src/app/home/home.component.html -->
 
+@if (sessionStore.isLoaded() && providerStore.isLoaded()) {
+
 <div class="h-dvh flex flex-col bg-background text-text-main overflow-hidden transition-colors">
 
     <app-header (toggleConfig)="configOpenMobile.set(!configOpenMobile())" (exportJson)="onExportJson()"
@@ -8,7 +10,7 @@
 
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- WRAPPER DEL SIDEBAR -->
+        <!-- SIDEBAR -->
         <div class="z-40 shrink-0 h-full">
             <app-sidebar [isOpenMobile]="configOpenMobile()" (closeMobile)="configOpenMobile.set(false)"></app-sidebar>
         </div>
@@ -22,12 +24,12 @@
         <!-- CHAT AREA -->
         <main class="flex-1 flex flex-col min-w-0 bg-background relative transition-colors">
 
-            <!-- WRAPPER DEL LAYOUT -->
+            <!-- LAYOUT -->
             <div class="flex-1 flex overflow-hidden">
                 <app-chat-layout class="flex-1 flex w-full"></app-chat-layout>
             </div>
 
-            <!-- WRAPPER DEL INPUT -->
+            <!-- INPUT -->
             <div class="shrink-0 w-full">
                 <app-chat-input></app-chat-input>
             </div>
@@ -36,3 +38,15 @@
 
     </div>
 </div>
+
+} @else {
+
+<!-- LOADER -->
+<div class="h-dvh flex items-center justify-center bg-background">
+    <div class="flex flex-col items-center gap-4">
+        <div class="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-text-muted font-medium animate-pulse">Cargando entorno seguro...</p>
+    </div>
+</div>
+
+}

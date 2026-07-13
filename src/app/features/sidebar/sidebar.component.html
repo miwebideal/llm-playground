@@ -5,7 +5,7 @@
     [class.w-80]="!isCollapsedDesktop()" [class.lg:w-14]="isCollapsedDesktop()"
     [class.-translate-x-full]="!isOpenMobile()" [class.translate-x-0]="isOpenMobile()" [class.lg:translate-x-0]="true">
 
-    <!-- ESTADO COLAPSADO (DESKTOP) -->
+    <!-- COLLAPSED (DESKTOP) -->
     @if (isCollapsedDesktop()) {
     <div class="hidden lg:flex flex-col items-center py-4 h-full">
         <button (click)="toggleDesktop()"
@@ -22,7 +22,7 @@
     </div>
     }
 
-    <!-- ESTADO EXPANDIDO -->
+    <!-- EXPANDED -->
     @if (!isCollapsedDesktop()) {
     <div class="flex flex-col h-full w-80 animate-fade-in">
 
@@ -47,7 +47,7 @@
             </button>
         </div>
 
-        <!-- MODO COMPARACIÓN Y TABS -->
+        <!-- COMPARATIVE AND TABS -->
         <div class="px-4 py-4 border-b border-border-base bg-surface-alt/30 shrink-0 flex flex-col gap-3 z-10">
             <label class="flex items-center justify-between cursor-pointer group">
                 <span class="text-sm font-bold text-primary group-hover:text-primary-hover transition-colors">Modo
@@ -72,23 +72,23 @@
             </div>
         </div>
 
-        <!-- CONTENEDOR SCROLL -->
+        <!-- SCROLL CONTAINER -->
         <div class="p-4 flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-5">
 
-            <!-- CONEXIÓN -->
+            <!-- CONNECTION -->
             <app-sidebar-connection [sessionId]="activeSessionId()"></app-sidebar-connection>
 
-            <!-- PARÁMETROS GLOBALES -->
+            <!-- GLOBAL PARAMS -->
             <div class="pt-4 border-t border-border-base">
-                <app-sidebar-parameters></app-sidebar-parameters>
+                <app-sidebar-parameters [sessionId]="activeSessionId()"></app-sidebar-parameters>
             </div>
 
-            <!-- OPCIONES DE CHAT -->
+            <!-- CHAT OPTIONS -->
             <div class="pt-4 border-t border-border-base">
                 <app-sidebar-options></app-sidebar-options>
             </div>
 
-            <!-- CRÉDITOS -->
+            <!-- CREDITS -->
             <div class="text-xs pt-4 border-t border-border-base text-text-muted leading-relaxed mt-auto">
                 <p>Un proyecto de <a href="https://miwebideal.com.ar" target="_blank" rel="noopener noreferrer"
                         class="text-primary hover:text-primary-hover hover:underline font-medium transition-colors">MiWebIdeal</a>
