@@ -36,7 +36,9 @@ export interface ChatSession {
     messages: Message[];
     useParams: boolean;
     temperature: number;
+    topP: number;
     maxTokens: number;
+    jsonMode: boolean;
     systemPrompt: string;
 }
 

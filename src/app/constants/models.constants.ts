@@ -19,6 +19,9 @@ export interface AiModel {
 
 export const AI_MODELS: Record<string, AiModel[]> = {
     'OpenAI': [
+        { id: 'gpt-5.6-sol', name: 'Sol (Frontier)' },
+        { id: 'gpt-5.6-terra', name: 'Terra (GPT-5.6)' },
+        { id: 'gpt-5.6-luna', name: 'Luna (GPT-5.6 Fast)' },
         { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini' },
         { id: 'gpt-5.4-nano', name: 'GPT-5.4 Nano' },
         { id: 'gpt-4.1-mini', name: 'GPT-4.1 Mini' },
@@ -29,28 +32,40 @@ export const AI_MODELS: Record<string, AiModel[]> = {
     ],
     'DeepInfra': [
         { id: 'deepseek-ai/DeepSeek-V4-Pro', name: 'DeepSeek V4 Pro' },
-        { id: 'deepseek-ai/DeepSeek-V4-Flash', name: 'DeepSeek V4 Flash' },
+        { id: 'deepseek-ai/DeepSeek-V4-Flash-0731', name: 'DeepSeek V4 Flash (0731)' },
+        //{ id: 'deepseek-ai/DeepSeek-V4-Flash', name: 'DeepSeek V4 Flash (Deprecado)' },
+        { id: 'moonshotai/Kimi-K3', name: 'Kimi K3' },
+        { id: 'moonshotai/Kimi-K2.7-Code', name: 'Kimi K2.7 Code' },
+        { id: 'zai-org/GLM-5.2', name: 'GLM 5.2' },
+        { id: 'nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B', name: 'Nemotron 3 Ultra (550B)' },
+        { id: 'XiaomiMiMo/MiMo-V2.5-Pro', name: 'MiMo V2.5 Pro' },
         { id: 'Qwen/Qwen3.6-35B-A3B', name: 'Qwen 3.6 (35B)' },
         { id: 'Qwen/Qwen3.5-397B-A17B', name: 'Qwen 3.5 (397B)' },
-        { id: 'zai-org/GLM-5.2', name: 'GLM 5.2' },
-        { id: 'moonshotai/Kimi-K2.7-Code', name: 'Kimi K2.7 Code' },
         { id: 'google/gemma-4-26B-A4B-it', name: 'Gemma 4 (26B)' },
         { id: 'deepseek-ai/DeepSeek-V3.2', name: 'DeepSeek V3.2' },
         { id: 'google/gemma-4-31B-it', name: 'Gemma 4 (31B)' }
     ],
     'Groq': [
-        { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 (70B) Versatile' },
-        { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 (8B) Instant' },
+        // { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 (70B) Versatile (Deprecado)' },
+        // { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 (8B) Instant (Deprecado)' },
         { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout (17B)' },
         { id: 'qwen/qwen3.6-27b', name: 'Qwen 3.6 (27B)' },
-        { id: 'openai/gpt-oss-120b', name: 'GPT-OSS (120B)' }
+        { id: 'openai/gpt-oss-120b', name: 'GPT-OSS (120B)' },
+        { id: 'openai/gpt-oss-20b', name: 'GPT-OSS (20B)' }
     ],
     'Fireworks AI': [
+        { id: 'accounts/fireworks/models/deepseek-v4-pro-0813', name: 'DeepSeek V4 Pro (0813)' },
+        { id: 'accounts/fireworks/models/deepseek-v4-flash-0731', name: 'DeepSeek V4 Flash (0731)' },
+        //{ id: 'accounts/fireworks/models/deepseek-v4-flash', name: 'DeepSeek V4 Flash (Deprecado)' },
+        { id: 'accounts/fireworks/models/qwen-3.8-max', name: 'Qwen 3.8 Max' },
+        { id: 'accounts/fireworks/models/kimi-k3', name: 'Kimi K3' },
         { id: 'accounts/fireworks/models/kimi-k2p7-code', name: 'Kimi K2.7 Code' },
+        { id: 'accounts/fireworks/models/glm-5.2', name: 'GLM 5.2' },
+        { id: 'accounts/fireworks/models/glm-5p2', name: 'GLM 5.2 (Legacy)' },
         { id: 'accounts/fireworks/models/glm-5p1', name: 'GLM 5.1' },
-        { id: 'accounts/fireworks/models/glm-5p2', name: 'GLM 5.2' },
+        { id: 'accounts/fireworks/models/muse-glimmer-30b', name: 'Muse Glimmer (30B)' },
+        { id: 'accounts/fireworks/models/nemotron-lightning-3.5-30b-a3b', name: 'Nemotron Lightning 3.5' },
         { id: 'accounts/fireworks/models/minimax-m3', name: 'MiniMax M3' },
-        { id: 'accounts/fireworks/models/deepseek-v4-flash', name: 'DeepSeek V4 Flash' },
         { id: 'accounts/fireworks/models/gpt-oss-120b', name: 'GPT-OSS (120B)' },
         { id: 'accounts/fireworks/models/qwen3p7-plus', name: 'Qwen 3.7 Plus' }
     ],

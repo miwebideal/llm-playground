@@ -1,11 +1,11 @@
 <!-- src/app/features/sidebar/sidebar-connection/sidebar-connection.component.html -->
 
 <div class="space-y-4">
-
     <!-- PROVEEDOR -->
     <div class="space-y-1.5">
         <label class="label-base">Proveedor</label>
-        <select [value]="session().providerId" (change)="onProviderSelect($event)" class="input-base cursor-pointer">
+        <select [ngModel]="session().providerId" (ngModelChange)="onProviderChange($event)"
+            class="input-base cursor-pointer">
             @for (p of providers(); track p.id) {
             @if (p.id !== 'custom') {
             <option [value]="p.id">{{ p.name }}</option>
@@ -20,8 +20,8 @@
         <label class="label-base">API Token {{ session().providerId !== 'custom' ? '(' + activeProvider()?.name + ')' :
             '' }}</label>
         <div class="relative">
-            <input type="text" [value]="activeProvider()?.apiToken || ''"
-                (input)="updateProviderToken($any($event).target.value)" class="input-base pr-10"
+            <input type="text" [ngModel]="activeProvider()?.apiToken || ''"
+                (ngModelChange)="updateProviderToken($event)" class="input-base pr-10"
                 [style.-webkit-text-security]="showToken() ? 'none' : 'disc'" placeholder="sk-...">
             <button (click)="showToken.set(!showToken())"
                 class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main">
@@ -35,28 +35,25 @@
     @if (session().providerId === 'custom') {
     <div class="space-y-1.5 animate-fade-in">
         <label class="label-base">API URL</label>
-        <input type="text" [value]="activeProvider()?.apiUrl || ''"
-            (input)="updateProviderUrl($any($event).target.value)" class="input-base"
-            placeholder="https://api.ejemplo.com/v1/chat/completions">
+        <input type="text" [ngModel]="activeProvider()?.apiUrl || ''" (ngModelChange)="updateProviderUrl($event)"
+            class="input-base" placeholder="https://api.ejemplo.com/v1/chat/completions">
     </div>
     }
 
     <!-- SESSION MODEL -->
     <div class="space-y-1.5">
         <label class="label-base">Modelo</label>
-        <select [value]="modelSelectValue( )" (change)="onModelSelect($event)" class="input-base cursor-pointer">
+        <select [(ngModel)]="modelSelectValue" class="input-base cursor-pointer">
             <option value="" disabled>Selecciona un modelo...</option>
-
             @for (model of availableModels(); track model.id) {
             <option [value]="model.id">{{ model.name }}</option>
             }
             <option value="manual" class="font-semibold text-primary">Ingresar Manualmente</option>
         </select>
 
-        @if (modelSelectValue() === 'manual') {
-        <input type="text" [value]="session().model" (input)="updateSessionModel($any($event).target.value)"
+        @if (modelSelectValue === 'manual') {
+        <input type="text" [ngModel]="session().model" (ngModelChange)="updateSessionModel($event)"
             class="input-base mt-2 animate-fade-in" placeholder="Ej: mi-modelo-custom-v1">
         }
     </div>
-
 </div>
