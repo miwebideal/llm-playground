@@ -15,7 +15,7 @@ export class ExportService {
 
     private toast = inject(ToastService);
 
-    exportChat(sessions: ChatSession[], config: GlobalConfig) {
+    exportChat(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
         const activeSessions = config.isCompareMode ? sessions.slice(0, 2) : [sessions[0]];
 
         if (activeSessions.every(s => s.messages.length === 0)) {
@@ -23,11 +23,13 @@ export class ExportService {
             return;
         }
 
-        // Limpiamos los mensajes para no exportar estados de streaming o errores temporales
         const cleanSessions = activeSessions.map(session => ({
             ...session,
             messages: session.messages.map(m => {
                 const { isStreaming, error, ...cleanMsg } = m;
+                if (!includeReasoning) {
+                    delete cleanMsg.reasoning;
+                }
                 return cleanMsg;
             })
         }));
@@ -47,7 +49,7 @@ export class ExportService {
         this.toast.success('Conversación exportada como JSON');
     }
 
-    private generateMarkdown(sessions: ChatSession[], config: GlobalConfig): string {
+    private generateMarkdown(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean): string {
         const activeSessions = config.isCompareMode ? sessions.slice(0, 2) : [sessions[0]];
 
         let md = `# LLM Playground Export\n\n`;
@@ -56,7 +58,13 @@ export class ExportService {
         activeSessions.forEach(session => {
             md += `## Chat - ${session.name} (${session.model || 'Sin configurar'})\n\n`;
             session.messages.forEach(m => {
-                md += `### ${m.role === 'user' ? 'Tú' : 'AI'}\n${m.content}\n\n`;
+                md += `### ${m.role === 'user' ? 'Tú' : 'AI'}\n`;
+
+                if (includeReasoning && m.reasoning) {
+                    md += `> **Proceso de pensamiento:**\n> ${m.reasoning.split('\n').join('\n> ')}\n\n`;
+                }
+
+                md += `${m.content}\n\n`;
             });
             md += `---\n\n`;
         });
@@ -64,14 +72,14 @@ export class ExportService {
         return md;
     }
 
-    exportMarkdown(sessions: ChatSession[], config: GlobalConfig) {
+    exportMarkdown(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
         const activeSessions = config.isCompareMode ? sessions.slice(0, 2) : [sessions[0]];
         if (activeSessions.every(s => s.messages.length === 0)) {
             this.toast.warning('No hay mensajes para exportar');
             return;
         }
 
-        const md = this.generateMarkdown(sessions, config);
+        const md = this.generateMarkdown(sessions, config, includeReasoning);
         const blob = new Blob([md], { type: 'text/markdown' });
 
         const fileName = config.isCompareMode
@@ -82,14 +90,14 @@ export class ExportService {
         this.toast.success('Conversación exportada como Markdown');
     }
 
-    async copyChat(sessions: ChatSession[], config: GlobalConfig) {
+    async copyChat(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
         const activeSessions = config.isCompareMode ? sessions.slice(0, 2) : [sessions[0]];
         if (activeSessions.every(s => s.messages.length === 0)) {
             this.toast.warning('No hay mensajes para copiar');
             return;
         }
 
-        const md = this.generateMarkdown(sessions, config);
+        const md = this.generateMarkdown(sessions, config, includeReasoning);
         try {
             await navigator.clipboard.writeText(md);
             this.toast.success('Chat copiado al portapapeles');

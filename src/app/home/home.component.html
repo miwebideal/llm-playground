@@ -4,8 +4,8 @@
 
 <div class="h-dvh flex flex-col bg-background text-text-main overflow-hidden transition-colors">
 
-    <app-header (toggleConfig)="configOpenMobile.set(!configOpenMobile())" (exportJson)="onExportJson()"
-        (exportMd)="onExportMd()" (copyChat)="onCopyChat()">
+    <app-header (toggleConfig)="configOpenMobile.set(!configOpenMobile())" (exportJson)="onExportJson($event)"
+        (exportMd)="onExportMd($event)" (copyChat)="onCopyChat($event)">
     </app-header>
 
     <div class="flex-1 flex overflow-hidden relative">

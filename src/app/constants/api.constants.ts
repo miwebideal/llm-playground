@@ -18,5 +18,8 @@ export const API_ERROR_TIPS: Record<string, string> = {
     'json_object': '💡 Tip: Este modelo no soporta forzar JSON Mode nativamente. Apagá el JSON Mode.',
     'response_format': '💡 Tip: Este modelo no soporta forzar JSON Mode nativamente. Apagá el JSON Mode.',
     'api_key': '🔑 Tip: Revisá que tu API Key sea correcta y tenga saldo.',
-    '401': '🔑 Tip: Error de Autenticación. Revisá tu API Key.'
+    '401': '🔑 Tip: Error de Autenticación. Revisá tu API Key.',
+    'not found': '🔍 Tip: El modelo no existe, fue escrito mal o fue deprecado por el proveedor. Revisá la lista de modelos.',
+    'not deployed': '🔍 Tip: El modelo no está disponible actualmente en este proveedor.',
+    '404': '🔍 Tip: Modelo o endpoint no encontrado. Verificá el ID del modelo.'
 };
