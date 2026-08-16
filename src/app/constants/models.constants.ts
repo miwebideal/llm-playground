@@ -10,7 +10,7 @@ export const API_PRESETS: Record<string, { apiUrl: string }> = {
     together: { apiUrl: 'https://api.together.xyz/v1/chat/completions' },
 };
 
-export const API_PRESET_KEYS = Object.keys(API_PRESETS);
+export const API_PRESET_KEYS = Object.keys(API_PRESETS );
 
 export interface AiModel {
     id: string;
@@ -33,7 +33,7 @@ export const AI_MODELS: Record<string, AiModel[]> = {
     'DeepInfra': [
         { id: 'deepseek-ai/DeepSeek-V4-Pro', name: 'DeepSeek V4 Pro' },
         { id: 'deepseek-ai/DeepSeek-V4-Flash-0731', name: 'DeepSeek V4 Flash (0731)' },
-        //{ id: 'deepseek-ai/DeepSeek-V4-Flash', name: 'DeepSeek V4 Flash (Deprecado)' },
+        // { id: 'deepseek-ai/DeepSeek-V4-Flash', name: 'DeepSeek V4 Flash (Deprecado)' },
         { id: 'moonshotai/Kimi-K3', name: 'Kimi K3' },
         { id: 'moonshotai/Kimi-K2.7-Code', name: 'Kimi K2.7 Code' },
         { id: 'zai-org/GLM-5.2', name: 'GLM 5.2' },
@@ -56,15 +56,14 @@ export const AI_MODELS: Record<string, AiModel[]> = {
     'Fireworks AI': [
         { id: 'accounts/fireworks/models/deepseek-v4-pro-0813', name: 'DeepSeek V4 Pro (0813)' },
         { id: 'accounts/fireworks/models/deepseek-v4-flash-0731', name: 'DeepSeek V4 Flash (0731)' },
-        //{ id: 'accounts/fireworks/models/deepseek-v4-flash', name: 'DeepSeek V4 Flash (Deprecado)' },
-        { id: 'accounts/fireworks/models/qwen-3.8-max', name: 'Qwen 3.8 Max' },
+        // { id: 'accounts/fireworks/models/deepseek-v4-flash', name: 'DeepSeek V4 Flash (Deprecado)' },
+        { id: 'accounts/fireworks/models/qwen3p8-max', name: 'Qwen 3.8 Max' },
         { id: 'accounts/fireworks/models/kimi-k3', name: 'Kimi K3' },
         { id: 'accounts/fireworks/models/kimi-k2p7-code', name: 'Kimi K2.7 Code' },
-        { id: 'accounts/fireworks/models/glm-5.2', name: 'GLM 5.2' },
-        { id: 'accounts/fireworks/models/glm-5p2', name: 'GLM 5.2 (Legacy)' },
+        { id: 'accounts/fireworks/models/glm-5p2', name: 'GLM 5.2' },
         { id: 'accounts/fireworks/models/glm-5p1', name: 'GLM 5.1' },
         { id: 'accounts/fireworks/models/muse-glimmer-30b', name: 'Muse Glimmer (30B)' },
-        { id: 'accounts/fireworks/models/nemotron-lightning-3.5-30b-a3b', name: 'Nemotron Lightning 3.5' },
+        { id: 'accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b', name: 'Nemotron Lightning 3.5' },
         { id: 'accounts/fireworks/models/minimax-m3', name: 'MiniMax M3' },
         { id: 'accounts/fireworks/models/gpt-oss-120b', name: 'GPT-OSS (120B)' },
         { id: 'accounts/fireworks/models/qwen3p7-plus', name: 'Qwen 3.7 Plus' }

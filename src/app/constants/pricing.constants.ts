@@ -40,14 +40,14 @@ export const MODEL_PRICING: Record<string, { input: number, output: number }> = 
     // Fireworks AI 
     'accounts/fireworks/models/deepseek-v4-pro-0813': { input: 1.32, output: 3.96 },
     'accounts/fireworks/models/deepseek-v4-flash-0731': { input: 0.14, output: 0.28 },
-    'accounts/fireworks/models/deepseek-v4-flash': { input: 0.14, output: 0.28 }, // Deprecado
-    'accounts/fireworks/models/qwen-3.8-max': { input: 2.00, output: 6.00 },
+    //'accounts/fireworks/models/deepseek-v4-flash': { input: 0.14, output: 0.28 }, // Deprecado
+    'accounts/fireworks/models/qwen3p8-max': { input: 2.00, output: 6.00 },
     'accounts/fireworks/models/kimi-k3': { input: 3.00, output: 15.00 },
     'accounts/fireworks/models/kimi-k2p7-code': { input: 0.95, output: 4.00 },
     'accounts/fireworks/models/glm-5p2': { input: 1.40, output: 4.40 },
     'accounts/fireworks/models/glm-5p1': { input: 1.40, output: 4.40 },
     'accounts/fireworks/models/muse-glimmer-30b': { input: 0.35, output: 1.50 },
-    'accounts/fireworks/models/nemotron-lightning-3.5-30b-a3b': { input: 0.05, output: 0.20 },
+    'accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b': { input: 0.05, output: 0.20 },
     'accounts/fireworks/models/minimax-m3': { input: 0.30, output: 1.20 },
     'accounts/fireworks/models/gpt-oss-120b': { input: 0.15, output: 0.60 },
     'accounts/fireworks/models/qwen3p7-plus': { input: 0.40, output: 1.60 },

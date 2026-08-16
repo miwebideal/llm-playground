@@ -25,14 +25,16 @@ export class HomeComponent {
     sessionStore = inject(SessionStore);
     providerStore = inject(ProviderStore);
 
-    onExportJson() {
-        this.exportService.exportChat(this.sessionStore.sessions(), this.configStore.state());
+    onExportJson(includeReasoning: boolean) {
+        this.exportService.exportChat(this.sessionStore.sessions(), this.configStore.state(), includeReasoning);
     }
-    onExportMd() {
-        this.exportService.exportMarkdown(this.sessionStore.sessions(), this.configStore.state());
+
+    onExportMd(includeReasoning: boolean) {
+        this.exportService.exportMarkdown(this.sessionStore.sessions(), this.configStore.state(), includeReasoning);
     }
-    onCopyChat() {
-        this.exportService.copyChat(this.sessionStore.sessions(), this.configStore.state());
+
+    onCopyChat(includeReasoning: boolean) {
+        this.exportService.copyChat(this.sessionStore.sessions(), this.configStore.state(), includeReasoning);
     }
 
 }

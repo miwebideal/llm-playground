@@ -41,8 +41,16 @@
                     [class.rotate-180]="isExportMenuOpen()"></svg>
             </button>
 
-            <div class="absolute right-0 top-full mt-2 w-48 bg-surface border border-border-base rounded-xl shadow-xl z-50 overflow-hidden transition-all duration-200 origin-top-right"
+            <div class="absolute right-0 top-full mt-2 w-56 bg-surface border border-border-base rounded-xl shadow-xl z-50 overflow-hidden transition-all duration-200 origin-top-right"
                 [class]="isExportMenuOpen() ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'">
+
+                <!-- TOGGLE PENSAMIENTO -->
+                <label
+                    class="px-3 py-2.5 border-b border-border-base flex items-center justify-between bg-surface-alt/50 cursor-pointer hover:bg-surface-hover transition-colors">
+                    <span class="text-xs font-medium text-text-main select-none">Incluir pensamiento</span>
+                    <app-toggle [checked]="includeReasoning()"
+                        (checkedChange)="includeReasoning.set($event)"></app-toggle>
+                </label>
 
                 <button (click)="onCopyChat()"
                     class="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-medium text-text-main hover:bg-surface-hover transition-colors cursor-pointer text-left">
