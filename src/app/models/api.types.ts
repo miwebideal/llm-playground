@@ -9,7 +9,10 @@ export interface ApiPayload {
     model: string;
     messages: ApiMessage[];
     temperature?: number;
+    top_p?: number;
     max_tokens?: number;
+    max_completion_tokens?: number;
+    response_format?: { type: string };
     stream: boolean;
     stream_options?: {
         include_usage: boolean;

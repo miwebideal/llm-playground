@@ -14,24 +14,49 @@
 
     @if (session().useParams) {
     <div class="flex flex-col gap-4 animate-fade-in pt-1">
+
         <div class="grid grid-cols-2 gap-3">
+
+            <!-- Temperatura -->
             <div class="space-y-1.5">
                 <label class="label-base">Temp</label>
                 <input type="number" step="0.1" min="0" max="2" [value]="session().temperature"
                     (input)="update('temperature', +$any($event).target.value)"
                     class="input-base text-center text-xs! ">
             </div>
+
+            <!-- Top-P -->
+            <div class="space-y-1.5">
+                <label class="label-base">Top-P</label>
+                <input type="number" step="0.1" min="0" max="1" [value]="session().topP"
+                    (input)="update('topP', +$any($event).target.value)" class="input-base text-center text-xs! ">
+            </div>
+
+            <!-- Max Tokens -->
             <div class="space-y-1.5">
                 <label class="label-base">Max Tokens</label>
                 <input type="number" [value]="session().maxTokens"
                     (input)="update('maxTokens', +$any($event).target.value)" class="input-base text-center text-xs! ">
             </div>
+
+            <!-- JSON Mode -->
+            <div class="space-y-1.5 flex flex-col justify-center pt-5">
+                <label class="flex items-center justify-between cursor-pointer group w-full">
+                    <span class="label-base group-hover:text-primary transition-colors">JSON Mode</span>
+                    <app-toggle [checked]="session().jsonMode"
+                        (checkedChange)="update('jsonMode', $event)"></app-toggle>
+                </label>
+            </div>
+
         </div>
+
+        <!-- System Prompt -->
         <div class="space-y-1.5">
             <label class="label-base">System Prompt</label>
             <textarea [value]="session().systemPrompt" (input)="update('systemPrompt', $any($event).target.value)"
                 class="input-base resize-y min-h-20 max-h-[50vh]"></textarea>
         </div>
+
     </div>
     }
 </div>

@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { GlobalConfig, ChatSession, ProviderConfig } from '../../models/chat.models';
 import { ApiMessage, ApiPayload, ApiResponse, GeminiResponse, ApiErrorResponse } from '../../models/api.types';
 import { StreamParserService, StreamChunk } from './stream-parser.service';
+import { MODELS_USING_COMPLETION_TOKENS, API_ERROR_TIPS } from '../../constants/api.constants';
 
 @Injectable({ providedIn: 'root' })
 export class LlmApiService {
@@ -25,7 +26,24 @@ export class LlmApiService {
 
         if (session.useParams) {
             payload.temperature = session.temperature;
-            payload.max_tokens = session.maxTokens;
+
+            if (session.topP !== undefined) {
+                payload.top_p = session.topP;
+            }
+
+            // Verificamos contra la constante si el modelo requiere max_completion_tokens
+            const modelLower = session.model.toLowerCase();
+            const requiresCompletionTokens = MODELS_USING_COMPLETION_TOKENS.some(m => modelLower.includes(m));
+
+            if (requiresCompletionTokens) {
+                payload.max_completion_tokens = session.maxTokens;
+            } else {
+                payload.max_tokens = session.maxTokens;
+            }
+
+            if (session.jsonMode) {
+                payload.response_format = { type: 'json_object' };
+            }
         }
 
         try {
@@ -61,9 +79,27 @@ export class LlmApiService {
         return JSON.stringify(data);
     }
 
-    extractError(data: unknown): string {
-        const error = (data as ApiErrorResponse).error;
-        return error?.message ?? 'Error desconocido de la API';
+    async extractSmartError(response: Response): Promise<string> {
+        try {
+            const errorData = await response.json() as ApiErrorResponse;
+            const originalError = errorData.error?.message || response.statusText;
+            const errorLower = originalError.toLowerCase();
+
+            let tip = '';
+
+            // Buscamos si el error original hace match con nuestro diccionario
+            for (const [key, message] of Object.entries(API_ERROR_TIPS)) {
+                if (errorLower.includes(key) || response.status.toString() === key) {
+                    tip = `\n\n${message}`;
+                    break;
+                }
+            }
+
+            // Devolvemos el error real + el tip (si existe)
+            return `❌ Error de API: ${originalError}${tip}`;
+        } catch {
+            return `❌ Error ${response.status}: No se pudo conectar con el proveedor.`;
+        }
     }
 
     cleanup() {

@@ -8,7 +8,7 @@ const SESSIONS_KEY = 'llm-sessions-v1';
 
 @Injectable({ providedIn: 'root' })
 export class SessionStore {
-    
+
     private _sessions = signal<ChatSession[]>([]);
     readonly sessions = computed(() => this._sessions());
     readonly isLoaded = signal(false);
@@ -27,7 +27,7 @@ export class SessionStore {
             const raw = localStorage.getItem(SESSIONS_KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                // Validación estricta
+
                 if (!Array.isArray(parsed) || (parsed.length > 0 && !parsed[0].providerId)) {
                     throw new Error('Backup corrupto');
                 }
@@ -35,7 +35,9 @@ export class SessionStore {
                     ...s,
                     useParams: s.useParams ?? true,
                     temperature: s.temperature ?? 0.7,
+                    topP: s.topP ?? 1,
                     maxTokens: s.maxTokens ?? 8192,
+                    jsonMode: s.jsonMode ?? false,
                     systemPrompt: s.systemPrompt ?? 'You are a helpful assistant.',
                     messages: s.messages?.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) })) || []
                 })));
@@ -45,8 +47,14 @@ export class SessionStore {
         } catch (e) {
             console.warn('Sesiones corruptas o vacías. Restaurando defaults.');
             this._sessions.set([
-                { id: 'session-a', name: 'Modelo A', providerId: 'openai', model: 'gpt-4o-mini', messages: [], useParams: true, temperature: 0.7, maxTokens: 8192, systemPrompt: 'You are a helpful assistant.' },
-                { id: 'session-b', name: 'Modelo B', providerId: 'openai', model: 'gpt-4o-mini', messages: [], useParams: true, temperature: 0.7, maxTokens: 8192, systemPrompt: 'You are a helpful assistant.' }
+                {
+                    id: 'session-a', name: 'Modelo A', providerId: 'openai', model: 'gpt-4o-mini', messages: [],
+                    useParams: true, temperature: 0.7, topP: 1, maxTokens: 8192, jsonMode: false, systemPrompt: 'You are a helpful assistant.'
+                },
+                {
+                    id: 'session-b', name: 'Modelo B', providerId: 'openai', model: 'gpt-4o-mini', messages: [],
+                    useParams: true, temperature: 0.7, topP: 1, maxTokens: 8192, jsonMode: false, systemPrompt: 'You are a helpful assistant.'
+                }
             ]);
             localStorage.removeItem(SESSIONS_KEY);
         }

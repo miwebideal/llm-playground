@@ -24,7 +24,7 @@ export class SidebarParametersComponent {
 
     session = computed(() => this.sessionStore.sessions().find(s => s.id === this.sessionId())!);
 
-    update(key: 'useParams' | 'temperature' | 'maxTokens' | 'systemPrompt', value: any) {
+    update(key: 'useParams' | 'temperature' | 'topP' | 'maxTokens' | 'jsonMode' | 'systemPrompt', value: any) {
         this.sessionStore.updateSession(this.sessionId(), { [key]: value });
     }
 
@@ -38,7 +38,9 @@ export class SidebarParametersComponent {
             this.sessionStore.updateSession(this.sessionId(), {
                 useParams: true,
                 temperature: 0.7,
+                topP: 1,
                 maxTokens: 8192,
+                jsonMode: false,
                 systemPrompt: 'You are a helpful assistant.'
             });
             this.toast.success('Parámetros restablecidos');
