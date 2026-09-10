@@ -69,3 +69,9 @@
 .animate-fade-in {
     animation: fade-in 0.3s ease-out forwards;
 }
+
+@media (max-width: 767px) {
+    html {
+        font-size: 15px;
+    }
+}

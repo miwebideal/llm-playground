@@ -24,13 +24,13 @@
         </div>
 
         <!-- INPUT -->
-        <div
-            class="relative flex flex-col w-full bg-surface-alt border border-border-strong rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
+        <div class="relative flex flex-col w-full bg-surface border-2 border-border-base rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
             <div class="flex items-start">
-                <textarea #messageInput [value]="userInput()"
-                    (input)="userInput.set($any($event).target.value); adjustHeight(messageInput)" autocomplete="off"
-                    (keydown)="onKeydown($event)" rows="1" placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
-                    class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-[40vh] overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-text-main placeholder-text-muted"></textarea>
+                
+                <textarea appAutosize [expanded]="isExpanded()" [value]="userInput()"
+                    (input)="onInput($any($event).target.value)" autocomplete="off" (keydown)="onKeydown($event)"
+                    rows="1" placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
+                    class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-text-main placeholder-text-muted text-sm md:text-[15px] leading-normal"></textarea>
 
                 <div class="p-2 pt-3">
                     @if (isLoading()) {
@@ -65,8 +65,20 @@
                     Shift+Enter nueva línea · Ctrl+K limpiar
                     }
                 </span>
+
+                <!-- BOTÓN EXPANDIR/CONTRAER -->
+                <button (click)="toggleExpand()"
+                    class="p-1 rounded-md text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors cursor-pointer"
+                    [title]="isExpanded() ? 'Minimizar' : 'Maximizar'">
+                    @if (isExpanded()) {
+                    <svg lucideMinimize class="w-3.5 h-3.5"></svg>
+                    } @else {
+                    <svg lucideMaximize class="w-3.5 h-3.5"></svg>
+                    }
+                </button>
             </div>
         </div>
+
     </div>
 </div>
 

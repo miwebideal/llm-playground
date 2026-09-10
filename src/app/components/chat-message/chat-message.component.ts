@@ -4,14 +4,14 @@ import { Component, inject, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Message } from '../../models/chat.models';
 import { SafeMarkdownService } from '../../core/services/safe-markdown.service';
-import { ToastService } from '../../core/services/toast.service';
+import { ClipboardService } from '../../core/services/clipboard.service';
 import { CodeCopyDirective } from '../../directives/code-copy.directive';
-import { MODEL_PRICING } from '../../constants/pricing.constants';
 
 import {
     LucideCircleAlert, LucideCopy, LucideTrash2,
     LucideBrain, LucideChevronDown, LucideBot, LucidePlay
 } from '@lucide/angular';
+import { MetricsService } from '../../core/services/metrics.service';
 
 @Component({
     selector: 'app-chat-message',
@@ -24,7 +24,8 @@ import {
 export class ChatMessageComponent {
 
     markdown = inject(SafeMarkdownService);
-    private toast = inject(ToastService);
+    private clipboard = inject(ClipboardService);
+    private metrics = inject(MetricsService);
 
     msg = input.required<Message>();
     onDelete = output<string>();
@@ -49,35 +50,15 @@ export class ChatMessageComponent {
             ? `🧠 Proceso de pensamiento:\n${m.reasoning}\n\nRespuesta:\n${m.content}`
             : m.content;
 
-        try {
-            await navigator.clipboard.writeText(textToCopy);
-            this.toast.success('Mensaje copiado al portapapeles');
-        } catch (err) {
-            this.toast.error('No se pudo copiar al portapapeles');
-            console.error('Clipboard error:', err);
-        }
+        await this.clipboard.copy(textToCopy, 'Mensaje copiado al portapapeles');
     }
 
     getTPS(metrics: Message['metrics']): string | null {
-        if (!metrics || !metrics.tokensOut || !metrics.totalTime || !metrics.ttft) return null;
-        const genTimeSec = (metrics.totalTime - metrics.ttft) / 1000;
-        if (genTimeSec <= 0) return null;
-        return (metrics.tokensOut / genTimeSec).toFixed(1);
+        return this.metrics.formatTPS(metrics);
     }
 
     getCost(metrics: Message['metrics'], model?: string): string | null {
-        if (!metrics || !metrics.tokensIn || !metrics.tokensOut || !model) return null;
-        const pricing = MODEL_PRICING[model];
-        if (!pricing) return null;
-
-        const costIn = (metrics.tokensIn / 1000000) * pricing.input;
-        const costOut = (metrics.tokensOut / 1000000) * pricing.output;
-        const totalCost = costIn + costOut;
-
-        if (totalCost === 0) return null;
-        if (totalCost < 0.0001) return '< $0.0001';
-
-        return '$' + totalCost.toFixed(4);
+        return this.metrics.formatCost(metrics, model);
     }
 
 }

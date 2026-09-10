@@ -1,34 +1,42 @@
 // src/app/features/chat/chat-input/chat-input.component.ts
 
-import { Component, signal, viewChild, ElementRef, afterNextRender, effect, computed, inject } from '@angular/core';
+import { Component, signal, viewChild, afterNextRender, computed, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LlmOrchestratorService } from '../../../core/services/llm-orchestrator.service';
 import { SessionStore } from '../../../core/stores/session.store';
 import { GlobalConfigStore } from '../../../core/stores/global-config.store';
 import { ToastService } from '../../../core/services/toast.service';
+import { DraftService } from '../../../core/services/draft.service';
 import { QUICK_PROMPTS } from '../../../constants/prompts.constants';
 import { ModalService } from '../../../core/services/modal.service';
 import { estimateTokens, estimateContextTokens } from '../../../utils/token.utils';
+import { TextareaAutosizeDirective } from '../../../directives/textarea-autosize.directive';
 
-import { LucideTrash, LucideRotateCcw, LucideSquare, LucideX, LucideSendHorizontal, LucideZap } from '@lucide/angular';
+import { LucideTrash, LucideRotateCcw, LucideSquare, LucideX, LucideSendHorizontal, LucideZap, LucideMaximize, LucideMinimize } from '@lucide/angular';
 
 @Component({
     selector: 'app-chat-input',
-    imports: [CommonModule, LucideTrash, LucideRotateCcw, LucideSquare, LucideX, LucideSendHorizontal, LucideZap],
+    imports: [
+        CommonModule, TextareaAutosizeDirective,
+        LucideTrash, LucideRotateCcw, LucideSquare, LucideX,
+        LucideSendHorizontal, LucideZap, LucideMaximize, LucideMinimize
+    ],
     templateUrl: './chat-input.component.html'
 })
 export class ChatInputComponent {
-
-    userInput = signal('');
-    showPromptsModal = signal(false);
 
     private orchestrator = inject(LlmOrchestratorService);
     private sessionStore = inject(SessionStore);
     private configStore = inject(GlobalConfigStore);
     private modalService = inject(ModalService);
     private toast = inject(ToastService);
-    private textareaRef = viewChild<ElementRef<HTMLTextAreaElement>>('messageInput');
-    private readonly DRAFT_KEY = 'llm-draft';
+    private draft = inject(DraftService);
+
+    private autosize = viewChild(TextareaAutosizeDirective);
+
+    readonly userInput = this.draft.text;
+    showPromptsModal = signal(false);
+    isExpanded = signal(false);
 
     readonly isLoading = this.orchestrator.isLoading;
     readonly canRegenerate = computed(() => this.orchestrator.canRegenerate());
@@ -36,68 +44,49 @@ export class ChatInputComponent {
 
     readonly estimatedTokens = computed(() => estimateTokens(this.userInput()));
     readonly contextTokens = computed(() => {
-        // Usamos la primera sesión activa como referencia para el cálculo de contexto
         const firstSession = this.sessionStore.sessions()[0];
         const history = firstSession?.messages.filter(m => !m.isStreaming && !m.error && m.role !== 'system') || [];
         return estimateContextTokens(history, '') + this.estimatedTokens();
     });
 
     readonly hasMessages = computed(() => {
-        return this.sessionStore.sessions().some(s => s.messages.length > 0);
+        const all = this.sessionStore.sessions();
+        const active = this.configStore.state().isCompareMode ? all.slice(0, 2) : [all[0]];
+        return active.some(s => s?.messages.length > 0);
     });
 
     constructor() {
-        const savedDraft = localStorage.getItem(this.DRAFT_KEY);
-        if (savedDraft) this.userInput.set(savedDraft);
-
-        afterNextRender(() => {
-            const el = this.textareaRef()?.nativeElement;
-            if (el) {
-                el.value = this.userInput();
-                this.adjustHeight(el);
-                el.focus();
-            }
-        });
+        afterNextRender(() => this.autosize()?.fit());
 
         effect(() => {
-            const input = this.userInput();
-            if (input.trim()) localStorage.setItem(this.DRAFT_KEY, input);
-            else localStorage.removeItem(this.DRAFT_KEY);
+            this.userInput();
+            this.isExpanded();
+            queueMicrotask(() => this.autosize()?.fit());
         });
     }
 
-    adjustHeight(el: HTMLTextAreaElement) {
-        el.style.height = 'auto';
-        el.style.height = el.scrollHeight + 'px';
+    onInput(value: string) {
+        this.draft.set(value);
+        this.autosize()?.fit();
     }
 
-    private resetTextareaHeight() {
-        const el = this.textareaRef()?.nativeElement;
-        if (el) {
-            el.style.height = 'auto';
-            el.value = '';
-        }
+    toggleExpand() {
+        this.isExpanded.update(v => !v);
     }
 
     setPrompt(text: string) {
-        this.userInput.set(text);
+        this.draft.set(text);
         this.showPromptsModal.set(false);
-        setTimeout(() => {
-            const el = this.textareaRef()?.nativeElement;
-            if (el) {
-                this.adjustHeight(el);
-                el.focus();
-            }
-        }, 50);
+        queueMicrotask(() => this.autosize()?.fit());
     }
 
     async sendMessage() {
         const text = this.userInput().trim();
         if (!text || this.isLoading()) return;
 
-        this.userInput.set('');
-        this.resetTextareaHeight();
-        localStorage.removeItem(this.DRAFT_KEY);
+        this.draft.clear();
+        this.isExpanded.set(false);
+        this.autosize()?.reset();
 
         await this.orchestrator.sendMessage(text);
     }
@@ -105,8 +94,9 @@ export class ChatInputComponent {
     onKeydown(event: KeyboardEvent) {
         if (event.key === 'k' && event.ctrlKey) {
             event.preventDefault();
-            this.userInput.set('');
-            this.resetTextareaHeight();
+            this.draft.clear();
+            this.isExpanded.set(false);
+            this.autosize()?.reset();
             return;
         }
         if (event.key === 'Enter' && !event.shiftKey) {
@@ -126,9 +116,15 @@ export class ChatInputComponent {
         });
 
         if (confirmed) {
-            this.sessionStore.clearMessages();
+            if (isCompare) {
+                this.sessionStore.clearMessages();
+            } else {
+                const first = this.sessionStore.sessions()[0];
+                if (first) this.sessionStore.clearMessages(first.id);
+            }
             this.toast.info('Historial borrado');
         }
+
     }
 
     async regenerateLast() {
@@ -154,5 +150,4 @@ export class ChatInputComponent {
         this.orchestrator.cancel();
         this.toast.warning('Petición cancelada');
     }
-
 }

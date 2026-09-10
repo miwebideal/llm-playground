@@ -1,0 +1,96 @@
+<!-- src/app/features/chat/compare-summary/compare-summary.component.html -->
+
+@if (visible()) {
+<div class="border-t border-border-base bg-surface/90">
+
+    <!-- SECTION: COMPARE TRIGGER -->
+    <div class="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-3">
+        <button type="button" (click)="toggle()"
+            class="px-2.5 py-1 rounded-full border border-primary/30 text-xs font-medium text-primary hover:bg-primary/5 transition-all cursor-pointer">
+            {{ open() ? 'Ocultar comparación' : 'Ver comparación' }}
+        </button>
+
+        @if (pair(); as p) {
+        <span class="text-[11px] text-text-muted truncate">
+            @if (p.winner === 'a') { {{ p.a.name }} · {{ label[criterion()] }} }
+            @else if (p.winner === 'b') { {{ p.b.name }} · {{ label[criterion()] }} }
+            @else if (p.winner === 'tie') { Empate · {{ label[criterion()] }} }
+            @else { Métricas incompletas }
+        </span>
+        }
+    </div>
+
+    <!-- SECTION: COMPARE PANEL -->
+    @if (open() && pair(); as p) {
+    <div class="max-w-4xl mx-auto px-4 pb-3 animate-fade-in">
+        <div class="rounded-xl border border-primary/40 bg-surface-alt/60 overflow-hidden shadow-sm">
+
+            <div class="px-3 py-2 border-b border-border-base flex items-center justify-between gap-2">
+                <p class="text-[11px] text-text-muted">Tiempo, tokens y costo.</p>
+                <div class="flex items-center gap-1">
+                    <button type="button" (click)="copyTable()"
+                        class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted hover:text-primary hover:border-primary/50 cursor-pointer">
+                        Copiar
+                    </button>
+                    <button type="button" (click)="close()" class="btn-icon" aria-label="Cerrar comparación">
+                        <svg lucideX class="w-3.5 h-3.5"></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="px-3 py-2 flex flex-wrap gap-1.5">
+                @for (c of criteria; track c) {
+                <button type="button" (click)="setCriterion(c)"
+                    class="px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-colors"
+                    [class.bg-primary]="criterion() === c" [class.text-text-inverse]="criterion() === c"
+                    [class.border-primary]="criterion() === c" [class.border-border-strong]="criterion() !== c"
+                    [class.text-text-muted]="criterion() !== c">
+                    {{ label[c] }}
+                </button>
+                }
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs text-left">
+                    <thead class="text-text-muted">
+                        <tr>
+                            <th class="px-3 py-2 font-medium">Modelo</th>
+                            <th class="px-3 py-2 font-medium">TTFT</th>
+                            <th class="px-3 py-2 font-medium">Total</th>
+                            <th class="px-3 py-2 font-medium">Out</th>
+                            <th class="px-3 py-2 font-medium">TPS</th>
+                            <th class="px-3 py-2 font-medium">Costo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-text-main">
+                        @for (row of [p.a, p.b]; track row.sessionId; let i = $index) {
+                        @let isWinner = (p.winner === 'a' && i === 0) || (p.winner === 'b' && i === 1);
+                        <tr class="border-t border-border-base" [class.bg-primary/10]="isWinner"
+                            [class.shadow-[inset_3px_0_0_var(--primary)]]="isWinner">
+                            <td class="px-3 py-2">
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium">{{ row.name }}</div>
+                                    @if (isWinner) {
+                                    <span
+                                        class="text-[9px] font-semibold uppercase tracking-wide px-1 py-0.5 rounded bg-primary text-text-inverse">
+                                        Ganador
+                                    </span>
+                                    }
+                                </div>
+                                <div class="text-text-muted truncate max-w-48" [title]="row.model">{{ row.model }}</div>
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ fmtMs(row.ttft) }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ fmtMs(row.totalTime) }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ row.tokensOut ?? '—' }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ fmtNum(row.tps) }}</td>
+                            <td class="px-3 py-2 whitespace-nowrap">{{ row.costLabel ?? '—' }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    }
+</div>
+}
