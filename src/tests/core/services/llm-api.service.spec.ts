@@ -22,7 +22,7 @@ describe('LlmApiService', () => {
     });
 
     describe('extractSmartError', () => {
-        
+
         // Helper para simular una respuesta HTTP de error
         const createMockResponse = (status: number, statusText: string, body: any) => {
             return new Response(JSON.stringify(body), {
@@ -38,7 +38,7 @@ describe('LlmApiService', () => {
             });
 
             const result = await service.extractSmartError(mockResponse);
-            
+
             expect(result).toContain('❌ Error de API: Unrecognized request argument: max_tokens');
             expect(result).toContain('💡 Tip: El modelo no soporta este parámetro');
         });
@@ -49,7 +49,7 @@ describe('LlmApiService', () => {
             });
 
             const result = await service.extractSmartError(mockResponse);
-            
+
             expect(result).toContain('💡 Tip: Este modelo no soporta forzar JSON Mode nativamente');
         });
 
@@ -59,7 +59,7 @@ describe('LlmApiService', () => {
             });
 
             const result = await service.extractSmartError(mockResponse);
-            
+
             expect(result).toContain('🔑 Tip: Error de Autenticación');
         });
 
@@ -69,16 +69,16 @@ describe('LlmApiService', () => {
             });
 
             const result = await service.extractSmartError(mockResponse);
-            
+
             expect(result).toBe('❌ Error de API: Server overload, please try again later');
             expect(result).not.toContain('💡 Tip:');
         });
 
         it('debería manejar respuestas que no son JSON (ej. caída de red)', async () => {
             const mockResponse = new Response('Gateway Timeout', { status: 504 });
-            
+
             const result = await service.extractSmartError(mockResponse);
-            
+
             expect(result).toBe('❌ Error 504: No se pudo conectar con el proveedor.');
         });
     });

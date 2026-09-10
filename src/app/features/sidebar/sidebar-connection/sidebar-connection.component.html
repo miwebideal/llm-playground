@@ -1,8 +1,9 @@
 <!-- src/app/features/sidebar/sidebar-connection/sidebar-connection.component.html -->
 
-<div class="space-y-4">
-    <!-- PROVEEDOR -->
-    <div class="space-y-1.5">
+<div class="space-y-2.5">
+
+    <!-- PROVIDER -->
+    <div class="field">
         <label class="label-base">Proveedor</label>
         <select [ngModel]="session().providerId" (ngModelChange)="onProviderChange($event)"
             class="input-base cursor-pointer">
@@ -11,49 +12,48 @@
             <option [value]="p.id">{{ p.name }}</option>
             }
             }
-            <option value="custom" class="font-semibold text-primary">Ingresar Manualmente</option>
+            <option value="custom">Ingresar manualmente</option>
         </select>
     </div>
 
-    <!-- API TOKEN -->
-    <div class="space-y-1.5">
-        <label class="label-base">API Token {{ session().providerId !== 'custom' ? '(' + activeProvider()?.name + ')' :
-            '' }}</label>
+    <!-- TOKEN -->
+    <div class="field">
+        <label class="label-base">API Token</label>
         <div class="relative">
             <input type="text" [ngModel]="activeProvider()?.apiToken || ''"
-                (ngModelChange)="updateProviderToken($event)" class="input-base pr-10"
+                (ngModelChange)="updateProviderToken($event)" class="input-base pr-9"
                 [style.-webkit-text-security]="showToken() ? 'none' : 'disc'" placeholder="sk-...">
-            <button (click)="showToken.set(!showToken())"
+            <button type="button" (click)="showToken.set(!showToken())"
                 class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main">
-                @if (showToken()) { <svg lucideEyeOff class="w-4 h-4"></svg> } @else { <svg lucideEye
-                    class="w-4 h-4"></svg> }
+                @if (showToken()) { <svg lucideEyeOff class="w-4 h-4"></svg> }
+                @else { <svg lucideEye class="w-4 h-4"></svg> }
             </button>
         </div>
     </div>
 
-    <!-- API URL -->
+    <!-- URL -->
     @if (session().providerId === 'custom') {
-    <div class="space-y-1.5 animate-fade-in">
+    <div class="field animate-fade-in">
         <label class="label-base">API URL</label>
         <input type="text" [ngModel]="activeProvider()?.apiUrl || ''" (ngModelChange)="updateProviderUrl($event)"
             class="input-base" placeholder="https://api.ejemplo.com/v1/chat/completions">
     </div>
     }
 
-    <!-- SESSION MODEL -->
-    <div class="space-y-1.5">
+    <!-- MODEL -->
+    <div class="field">
         <label class="label-base">Modelo</label>
         <select [(ngModel)]="modelSelectValue" class="input-base cursor-pointer">
             <option value="" disabled>Selecciona un modelo...</option>
             @for (model of availableModels(); track model.id) {
             <option [value]="model.id">{{ model.name }}</option>
             }
-            <option value="manual" class="font-semibold text-primary">Ingresar Manualmente</option>
+            <option value="manual">Ingresar manualmente</option>
         </select>
 
         @if (modelSelectValue === 'manual') {
         <input type="text" [ngModel]="session().model" (ngModelChange)="updateSessionModel($event)"
-            class="input-base mt-2 animate-fade-in" placeholder="Ej: mi-modelo-custom-v1">
+            class="input-base animate-fade-in" placeholder="mi-modelo-custom">
         }
     </div>
 </div>

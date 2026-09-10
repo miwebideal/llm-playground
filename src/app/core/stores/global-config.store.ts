@@ -1,10 +1,8 @@
 // src/app/core/stores/global-config.store.ts
 
-import { Injectable, signal, computed } from '@angular/core';
-import { Subject, debounceTime } from 'rxjs';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { GlobalConfig } from '../../models/chat.models';
-
-const CONFIG_KEY = 'llm-global-config-v1';
+import { PersistenceService, STORAGE_KEYS } from '../services/persistence.service';
 
 const DEFAULT_CONFIG: GlobalConfig = {
     includeHistory: true,
@@ -12,41 +10,29 @@ const DEFAULT_CONFIG: GlobalConfig = {
     isCompareMode: false,
 };
 
+function isConfig(data: unknown): boolean {
+    if (!data || typeof data !== 'object') return false;
+    const o = data as Partial<GlobalConfig>;
+    return typeof o.includeHistory === 'boolean'
+        && typeof o.streamMode === 'boolean'
+        && typeof o.isCompareMode === 'boolean';
+}
+
 @Injectable({ providedIn: 'root' })
 export class GlobalConfigStore {
+
+    private persist = inject(PersistenceService);
+
     private _state = signal<GlobalConfig>(DEFAULT_CONFIG);
     readonly state = computed(() => this._state());
 
-    private save$ = new Subject<GlobalConfig>();
-
     constructor() {
-        this.load();
-        // Backup diferido: guarda 1 segundo después del último cambio
-        this.save$.pipe(debounceTime(1000)).subscribe(data => {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(data));
-        });
-    }
-
-    private load() {
-        try {
-            const raw = localStorage.getItem(CONFIG_KEY);
-            if (raw) {
-                const parsed = JSON.parse(raw);
-                // Validación estricta: si no es un objeto válido, tira error y usa default
-                if (typeof parsed !== 'object' || parsed === null || !('isCompareMode' in parsed)) {
-                    throw new Error('Backup corrupto');
-                }
-                this._state.set({ ...DEFAULT_CONFIG, ...parsed });
-            }
-        } catch (e) {
-            console.warn('Configuración corrupta o vacía. Restaurando defaults.');
-            this._state.set(DEFAULT_CONFIG);
-            localStorage.removeItem(CONFIG_KEY);
-        }
+        const saved = this.persist.load<GlobalConfig>(STORAGE_KEYS.config, isConfig);
+        this._state.set(saved ?? DEFAULT_CONFIG);
     }
 
     update(partial: Partial<GlobalConfig>) {
         this._state.update(current => ({ ...current, ...partial }));
-        this.save$.next(this._state()); // Dispara el backup diferido
+        this.persist.save(STORAGE_KEYS.config, this._state());
     }
 }

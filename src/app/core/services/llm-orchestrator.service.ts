@@ -9,6 +9,7 @@ import { MessageBuilderService } from './message-builder.service';
 import { StreamReaderService } from './stream-reader.service';
 import { ToastService } from './toast.service';
 import { StreamChunk } from './stream-parser.service';
+import { Message } from '../../models/chat.models';
 
 @Injectable({ providedIn: 'root' })
 export class LlmOrchestratorService {
@@ -44,7 +45,6 @@ export class LlmOrchestratorService {
     async sendMessage(userContent: string): Promise<void> {
         const activeSessions = this.getActiveSessions();
 
-        // Validación
         for (const session of activeSessions) {
             const provider = this.providerStore.providers().find(p => p.id === session.providerId);
             if (!provider || !provider.apiUrl || !provider.apiToken || !session.model) {
@@ -56,7 +56,6 @@ export class LlmOrchestratorService {
         this._isLoading.set(true);
         this.stopRequested.set(false);
 
-        // Agregar mensaje del usuario
         const userMsgId = crypto.randomUUID();
         for (const session of activeSessions) {
             this.sessionStore.addMessage(session.id, {
@@ -67,7 +66,6 @@ export class LlmOrchestratorService {
             });
         }
 
-        // Procesar en paralelo
         const tasks = activeSessions.map(session => this.processSession(session.id, userContent));
         await Promise.all(tasks);
 
@@ -86,7 +84,7 @@ export class LlmOrchestratorService {
 
         this.sessionStore.updateMessage(sessionId, messageId, m => ({ ...m, isStreaming: true, error: undefined }));
 
-        const continuePrompt = "Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.";
+        const continuePrompt = 'Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.';
 
         await this.processSession(sessionId, continuePrompt, messageId);
         this._isLoading.set(false);
@@ -145,7 +143,7 @@ export class LlmOrchestratorService {
             });
         }
 
-        const history = session.messages.filter(m => !m.isStreaming && !m.error && m.role !== 'system');
+        const history = this.historyForRequest(session.messages, existingMessageId);
         const apiMessages = this.builder.build(userContent, session, config, history);
         const startTime = performance.now();
 
@@ -159,7 +157,6 @@ export class LlmOrchestratorService {
             }
 
             if (config.streamMode) {
-                // Delegamos la lectura del stream al servicio
                 await this.streamReader.readStream(
                     response,
                     () => this.stopRequested(),
@@ -169,11 +166,20 @@ export class LlmOrchestratorService {
                 const data = await response.json();
                 const content = this.api.extractContent(data);
                 const finishReason = data.choices?.[0]?.finish_reason || data.candidates?.[0]?.finishReason;
+                const usage = data.usage;
 
                 this.sessionStore.updateMessage(sessionId, assistantId, msg => ({
                     ...msg,
                     content: existingMessageId ? msg.content + content : content,
-                    finishReason: finishReason
+                    finishReason: finishReason,
+                    metrics: {
+                        ...(msg.metrics ?? { ttft: 0, totalTime: 0 }),
+                        ttft: msg.metrics?.ttft || Math.round(ttft),
+                        ...(usage && {
+                            tokensIn: usage.prompt_tokens,
+                            tokensOut: usage.completion_tokens,
+                        }),
+                    },
                 }));
             }
 
@@ -196,6 +202,14 @@ export class LlmOrchestratorService {
             }
             this.handleStreamError(sessionId, assistantId, err.message || 'Error desconocido');
         }
+    }
+
+    private historyForRequest(messages: Message[], continueId?: string): Message[] {
+        return messages.filter(m => {
+            if (m.role === 'system' || m.error) return false;
+            if (continueId && m.id === continueId) return !!m.content;
+            return !m.isStreaming;
+        });
     }
 
     private applyChunk(sessionId: string, messageId: string, chunk: StreamChunk, ttft: number) {
@@ -229,5 +243,4 @@ export class LlmOrchestratorService {
             content: msg.content ? `${msg.content}\n\n${message}` : message,
         }));
     }
-
 }

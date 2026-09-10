@@ -15,7 +15,7 @@
     }
 
     .bubble-user {
-        @apply max-w-[85%] lg:max-w-[70%] min-w-48 bg-primary text-text-inverse rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm;
+        @apply max-w-[85%] lg:max-w-[70%] min-w-48 bg-surface border border-border-base text-text-main rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm;
     }
 
     .bubble-ai {
@@ -34,4 +34,29 @@
     .input-model:focus {
         direction: ltr;
     }
+
+    .input-base {
+        @apply w-full px-2.5 py-1.5 bg-surface-alt border border-border-base rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-text-muted text-text-main transition-all;
+    }
+
+    .label-base {
+        @apply text-[11px] font-medium text-text-muted;
+    }
+
+    .field {
+        @apply space-y-1;
+    }
+
+    .row-toggle {
+        @apply flex items-center justify-between gap-3 cursor-pointer;
+    }
+
+    .chip-btn {
+        @apply px-2 py-0.5 rounded-full border border-border-strong text-[11px] font-medium text-text-muted hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all inline-flex items-center gap-1 cursor-pointer;
+    }
+
+    .sidebar-section {
+        @apply pt-3 border-t border-border-base;
+    }
+
 }

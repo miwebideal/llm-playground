@@ -1,25 +1,26 @@
 <!-- src/app/components/toast/toast.component.html -->
 
-<!-- CONTENEDOR -->
-<div class="fixed z-100 flex flex-col gap-2 pointer-events-none max-w-64 md:max-w-full top-20 right-4">
+<!-- TOAST STACK -->
+<div
+    class="fixed z-200 flex flex-col gap-2 pointer-events-none w-[min(20rem,calc(100%-2rem))] left-1/2 -translate-x-1/2 top-17 md:left-auto md:right-4 md:translate-x-0 md:top-20">
 
     @for (toast of toastService.toasts(); track toast.id) {
 
-    <div class="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border transition-all duration-300 animate-fade-in w-full"
+    <div class="pointer-events-auto flex items-center gap-2.5 px-3 py-2 rounded-lg shadow-lg border text-text-main bg-surface animate-fade-in"
         [ngClass]="getToastClasses(toast.type)">
 
         @switch (toast.type) {
-        @case ('success') { <svg lucideCheckCheck class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
-        @case ('error') { <svg lucideAlertCircle class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
-        @case ('warning') { <svg lucideAlertTriangle class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
-        @case ('info') { <svg lucideInfo class="w-4 h-4 md:w-5 md:h-5 shrink-0"></svg> }
+        @case ('success') { <svg lucideCheckCheck class="w-3.5 h-3.5 shrink-0"></svg> }
+        @case ('error') { <svg lucideAlertCircle class="w-3.5 h-3.5 shrink-0"></svg> }
+        @case ('warning') { <svg lucideAlertTriangle class="w-3.5 h-3.5 shrink-0"></svg> }
+        @case ('info') { <svg lucideInfo class="w-3.5 h-3.5 shrink-0"></svg> }
         }
 
-        <span class="text-xs md:text-sm font-medium flex-1">{{ toast.message }}</span>
+        <span class="text-xs font-medium flex-1 leading-snug">{{ toast.message }}</span>
 
         <button (click)="toastService.remove(toast.id)"
-            class="ml-2 opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0 p-1">
-            <svg lucideX class="w-3.5 h-3.5 md:w-4 md:h-4"></svg>
+            class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0 p-0.5">
+            <svg lucideX class="w-3.5 h-3.5"></svg>
         </button>
     </div>
     }

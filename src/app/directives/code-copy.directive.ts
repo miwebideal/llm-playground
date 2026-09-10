@@ -1,7 +1,7 @@
 // src/app/directives/code-copy.directive.ts
 
 import { Directive, ElementRef, Input, OnChanges, SimpleChanges, OnDestroy, inject, Renderer2, AfterViewInit } from '@angular/core';
-import { ToastService } from '../core/services/toast.service';
+import { ClipboardService } from '../core/services/clipboard.service';
 
 @Directive({
     selector: '[appCodeCopy]',
@@ -13,7 +13,7 @@ export class CodeCopyDirective implements OnChanges, OnDestroy, AfterViewInit {
 
     private el = inject(ElementRef);
     private renderer = inject(Renderer2);
-    private toast = inject(ToastService);
+    private clipboard = inject(ClipboardService);
 
     private clickListener!: () => void;
     private observer!: MutationObserver;
@@ -79,20 +79,17 @@ export class CodeCopyDirective implements OnChanges, OnDestroy, AfterViewInit {
         });
     }
 
-    private handleCopy(code: string, btn: HTMLElement) {
-        navigator.clipboard.writeText(code).then(() => {
-            this.toast.success('Código copiado al portapapeles');
+    private async handleCopy(code: string, btn: HTMLElement) {
+        const ok = await this.clipboard.copy(code, 'Código copiado al portapapeles');
+        if (!ok) return;
 
-            this.renderer.setProperty(btn, 'innerHTML', this.getCheckIcon());
-            this.renderer.setAttribute(btn, 'disabled', 'true');
+        this.renderer.setProperty(btn, 'innerHTML', this.getCheckIcon());
+        this.renderer.setAttribute(btn, 'disabled', 'true');
 
-            setTimeout(() => {
-                this.renderer.setProperty(btn, 'innerHTML', this.getCopyIcon());
-                this.renderer.removeAttribute(btn, 'disabled');
-            }, 2000);
-        }).catch(() => {
-            this.toast.error('No se pudo copiar el código');
-        });
+        setTimeout(() => {
+            this.renderer.setProperty(btn, 'innerHTML', this.getCopyIcon());
+            this.renderer.removeAttribute(btn, 'disabled');
+        }, 2000);
     }
 
     private getCopyIcon(): string {

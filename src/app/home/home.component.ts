@@ -10,11 +10,14 @@ import { ExportService } from '../core/services/export.service';
 import { SessionStore } from '../core/stores/session.store';
 import { GlobalConfigStore } from '../core/stores/global-config.store';
 import { ProviderStore } from '../core/stores/provider.store';
+import { CompareSummaryComponent } from '../features/chat/compare-summary/compare-summary.component';
 
 @Component({
     selector: 'app-home',
-    imports: [CommonModule, HeaderComponent, SidebarComponent, ChatLayoutComponent, ChatInputComponent],
-    templateUrl: './home.component.html',
+    imports: [
+        CommonModule, HeaderComponent, SidebarComponent,
+        ChatLayoutComponent, CompareSummaryComponent, ChatInputComponent
+    ], templateUrl: './home.component.html',
 })
 export class HomeComponent {
 

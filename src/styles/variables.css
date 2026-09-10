@@ -1,89 +1,74 @@
 /* src/styles/variables.css */
 
 :root {
-
-    /* Fondos y Superficies */
-    --bg-base: #f9fafb;
+    --bg-base: #f4f4f5;
     --bg-surface: #ffffff;
-    --bg-surface-hover: #f3f4f6;
-    --bg-surface-alt: #f3f4f6;
+    --bg-surface-hover: #f4f4f5;
+    --bg-surface-alt: #ececee;
 
-    /* Bordes */
-    --border-base: #e5e7eb;
-    --border-strong: #d1d5db;
+    --border-base: #e4e4e7;
+    --border-strong: #d4d4d8;
 
-    /* Textos */
-    --text-main: #111827;
-    --text-muted: #4b5563;
-    --text-inverse: #ffffff;
+    --text-main: #18181b;
+    --text-muted: #71717a;
+    --text-inverse: #fafafa;
 
-    /* Color Principal */
-    --primary: #7c3aed;
-    --primary-hover: #6d28d9;
-    --primary-bg: #ede9fe;
-    --primary-text: #6d28d9;
+    --primary: #6d28d9;
+    --primary-hover: #5b21b6;
+    --primary-bg: #f5f3ff;
+    --primary-text: #5b21b6;
 
-    /* Estados */
-    --success: #10b981;
-    --success-bg: #d1fae5;
-    --success-text: #047857;
+    --success: #3f3f46;
+    --success-bg: #f4f4f5;
+    --success-text: #3f3f46;
 
-    --error: #ef4444;
-    --error-bg: #fee2e2;
-    --error-text: #b91c1c;
+    --error: #dc2626;
+    --error-bg: #fef2f2;
+    --error-text: #991b1b;
 
-    --warning: #f59e0b;
-    --warning-bg: #fef3c7;
-    --warning-text: #b45309;
+    --warning: #a1a1aa;
+    --warning-bg: #f4f4f5;
+    --warning-text: #52525b;
 
-    --info: #3b82f6;
-    --info-bg: #dbeafe;
-    --info-text: #1d4ed8;
+    --info: #3f3f46;
+    --info-bg: #f4f4f5;
+    --info-text: #3f3f46;
 
-    /* Tipografía */
     --font-base: 'Geist', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
-
 }
 
 .dark {
+    --bg-base: #09090b;
+    --bg-surface: #18181b;
+    --bg-surface-hover: #27272a;
+    --bg-surface-alt: #141416;
 
-    /* Fondos y Superficies Dark */
-    --bg-base: #030712;
-    --bg-surface: #111827;
-    --bg-surface-hover: #1f2937;
-    --bg-surface-alt: #1f2937;
+    --border-base: #27272a;
+    --border-strong: #3f3f46;
 
-    /* Bordes Dark */
-    --border-base: #1f2937;
-    --border-strong: #374151;
+    --text-main: #f4f4f5;
+    --text-muted: #a1a1aa;
+    --text-inverse: #fafafa;
 
-    /* Textos Dark */
-    --text-main: #f9fafb;
-    --text-muted: #9ca3af;
-    --text-inverse: #ffffff;
-
-    /* Color Principal Dark */
     --primary: #8b5cf6;
     --primary-hover: #7c3aed;
-    --primary-bg: rgba(139, 92, 246, 0.15);
+    --primary-bg: rgba(139, 92, 246, 0.14);
     --primary-text: #c4b5fd;
 
-    /* Estados Dark */
-    --success: #10b981;
-    --success-bg: rgba(16, 185, 129, 0.15);
-    --success-text: #6ee7b7;
+    --success: #a1a1aa;
+    --success-bg: #27272a;
+    --success-text: #d4d4d8;
 
-    --error: #ef4444;
-    --error-bg: rgba(239, 68, 68, 0.15);
+    --error: #f87171;
+    --error-bg: rgba(248, 113, 113, 0.12);
     --error-text: #fca5a5;
 
-    --warning: #f59e0b;
-    --warning-bg: rgba(245, 158, 11, 0.15);
-    --warning-text: #fcd34d;
+    --warning: #a1a1aa;
+    --warning-bg: #27272a;
+    --warning-text: #d4d4d8;
 
-    --info: #3b82f6;
-    --info-bg: rgba(59, 130, 246, 0.15);
-    --info-text: #93c5fd;
-
+    --info: #a1a1aa;
+    --info-bg: #27272a;
+    --info-text: #d4d4d8;
 }

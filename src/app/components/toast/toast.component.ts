@@ -17,11 +17,11 @@ export class ToastComponent {
 
     getToastClasses(type: ToastType): string {
         switch (type) {
-            case 'success': return 'bg-success text-white border-success';
-            case 'error': return 'bg-error text-white border-error';
-            case 'warning': return 'bg-warning text-white border-warning';
-            case 'info': return 'bg-info text-white border-info';
-            default: return 'bg-surface border-border-strong text-text-main';
+            case 'success': return 'border-border-strong';
+            case 'error': return 'border-error/40 text-error';
+            case 'warning': return 'border-border-strong';
+            case 'info': return 'border-border-strong';
+            default: return 'border-border-strong';
         }
     }
 
