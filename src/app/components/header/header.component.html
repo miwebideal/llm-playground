@@ -49,7 +49,7 @@
                     class="px-3 py-2.5 border-b border-border-base flex items-center justify-between bg-surface-alt/50 cursor-pointer hover:bg-surface-hover transition-colors">
                     <span class="text-xs font-medium text-text-main select-none">Incluir pensamiento</span>
                     <app-toggle [checked]="includeReasoning()"
-                        (checkedChange)="includeReasoning.set($event)"></app-toggle>
+                        (checkedChange)="setIncludeReasoning($event)"></app-toggle>
                 </label>
 
                 <button (click)="onCopyChat()"

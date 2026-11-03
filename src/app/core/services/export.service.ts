@@ -1,10 +1,11 @@
 // src/app/core/services/export.service.ts
 
 import { Injectable, inject } from '@angular/core';
+import { ChatSession, GlobalConfig, ProviderConfig } from '../models';
+import { activeSessions } from '../state/session.selectors';
+import { MetricsService, RunStats } from './metrics.service';
 import { ToastService } from './toast.service';
 import { ClipboardService } from './clipboard.service';
-import { MetricsService, RunStats } from './metrics.service';
-import { ChatSession, GlobalConfig } from '../../models/chat.models';
 
 interface ExportData {
     exportedAt: string;
@@ -27,8 +28,8 @@ export class ExportService {
     private clipboard = inject(ClipboardService);
     private metrics = inject(MetricsService);
 
-    exportChat(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
-        const active = this.active(sessions, config);
+    exportChat(sessions: ChatSession[], config: GlobalConfig, providers: ProviderConfig[], includeReasoning: boolean): void {
+        const active = this.active(sessions, config, providers);
         if (!this.hasMessages(active)) {
             this.toast.warning('No hay mensajes para exportar');
             return;
@@ -45,8 +46,8 @@ export class ExportService {
         this.toast.success('Conversación exportada como JSON');
     }
 
-    exportMarkdown(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
-        const active = this.active(sessions, config);
+    exportMarkdown(sessions: ChatSession[], config: GlobalConfig, providers: ProviderConfig[], includeReasoning: boolean): void {
+        const active = this.active(sessions, config, providers);
         if (!this.hasMessages(active)) {
             this.toast.warning('No hay mensajes para exportar');
             return;
@@ -56,8 +57,8 @@ export class ExportService {
         this.toast.success('Conversación exportada como Markdown');
     }
 
-    async copyChat(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean) {
-        const active = this.active(sessions, config);
+    async copyChat(sessions: ChatSession[], config: GlobalConfig, providers: ProviderConfig[], includeReasoning: boolean): Promise<void> {
+        const active = this.active(sessions, config, providers);
         if (!this.hasMessages(active)) {
             this.toast.warning('No hay mensajes para copiar');
             return;
@@ -65,21 +66,21 @@ export class ExportService {
         await this.clipboard.copy(this.generateMarkdown(active, config, includeReasoning), 'Chat copiado al portapapeles');
     }
 
-    private active(sessions: ChatSession[], config: GlobalConfig): ChatSession[] {
-        return config.isCompareMode ? sessions.slice(0, 2) : [sessions[0]];
+    private active(sessions: ChatSession[], config: GlobalConfig, providers: ProviderConfig[]): ChatSession[] {
+        return activeSessions(sessions, config, providers);
     }
 
     private hasMessages(sessions: ChatSession[]): boolean {
-        return sessions.some(s => s?.messages.length > 0);
+        return sessions.some(session => session.messages.length > 0);
     }
 
     private clean(sessions: ChatSession[], includeReasoning: boolean): ChatSession[] {
         return sessions.map(session => ({
             ...session,
-            messages: session.messages.map(m => {
-                const { isStreaming, error, ...cleanMsg } = m;
-                if (!includeReasoning) delete cleanMsg.reasoning;
-                return cleanMsg;
+            messages: session.messages.map(message => {
+                const clean = { ...message, isStreaming: false, timestamp: new Date(message.timestamp) };
+                if (!includeReasoning) delete clean.reasoning;
+                return clean;
             })
         }));
     }
@@ -90,15 +91,16 @@ export class ExportService {
         const b = this.metrics.statsFor(sessions[1]);
         if (!a || !b) return null;
 
-        const name = (side: 'a' | 'b' | 'tie' | null, aN: string, bN: string) => {
-            if (side === 'a') return aN;
-            if (side === 'b') return bN;
+        const name = (side: 'a' | 'b' | 'tie' | null, aName: string, bName: string) => {
+            if (side === 'a') return aName;
+            if (side === 'b') return bName;
             if (side === 'tie') return 'Empate';
             return '—';
         };
 
         return {
-            a, b,
+            a,
+            b,
             winnerTime: name(this.metrics.winner(a, b, 'totalTime'), a.name, b.name),
             winnerTps: name(this.metrics.winner(a, b, 'tps'), a.name, b.name),
             winnerCost: name(this.metrics.winner(a, b, 'cost'), a.name, b.name),
@@ -107,63 +109,68 @@ export class ExportService {
     }
 
     private generateMarkdown(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean): string {
-        let md = `# LLM Playground Export\n\n`;
-        md += `**Fecha:** ${new Date().toLocaleString('es-AR')}\n\n`;
+        let markdown = `# LLM Playground Export\n\n`;
+        markdown += `**Fecha:** ${new Date().toLocaleString('es-AR')}\n\n`;
 
-        const cmp = this.comparison(sessions, config);
-        if (cmp) {
-            md += `## Comparación\n\n`;
-            md += `| | ${cmp.a.name} | ${cmp.b.name} |\n`;
-            md += `|---|---|---|\n`;
-            md += `| Modelo | ${cmp.a.model} | ${cmp.b.model} |\n`;
-            md += `| TTFT | ${this.ms(cmp.a.ttft)} | ${this.ms(cmp.b.ttft)} |\n`;
-            md += `| Total | ${this.ms(cmp.a.totalTime)} | ${this.ms(cmp.b.totalTime)} |\n`;
-            md += `| Tokens out | ${cmp.a.tokensOut ?? '—'} | ${cmp.b.tokensOut ?? '—'} |\n`;
-            md += `| TPS | ${this.n(cmp.a.tps)} | ${this.n(cmp.b.tps)} |\n`;
-            md += `| Costo | ${cmp.a.costLabel ?? '—'} | ${cmp.b.costLabel ?? '—'} |\n\n`;
-            md += `- Más rápido: **${cmp.winnerTime}**\n`;
-            md += `- Menor TTFT: **${cmp.winnerTtft}**\n`;
-            md += `- Mayor TPS: **${cmp.winnerTps}**\n`;
-            md += `- Menor costo: **${cmp.winnerCost}**\n\n`;
-            md += `_Métricas de la generación. La calidad la decide quien lee._\n\n`;
+        const comparison = this.comparison(sessions, config);
+        if (comparison) {
+            markdown += `## Comparación\n\n`;
+            markdown += `| | ${comparison.a.name} | ${comparison.b.name} |\n`;
+            markdown += `|---|---|---|\n`;
+            markdown += `| Modelo | ${comparison.a.model} | ${comparison.b.model} |\n`;
+            markdown += `| TTFT | ${this.ms(comparison.a.ttft)} | ${this.ms(comparison.b.ttft)} |\n`;
+            markdown += `| Total | ${this.ms(comparison.a.totalTime)} | ${this.ms(comparison.b.totalTime)} |\n`;
+            markdown += `| Tokens out | ${comparison.a.tokensOut ?? '—'} | ${comparison.b.tokensOut ?? '—'} |\n`;
+            markdown += `| TPS | ${this.n(comparison.a.tps)} | ${this.n(comparison.b.tps)} |\n`;
+            markdown += `| Costo | ${comparison.a.costLabel ?? '—'} | ${comparison.b.costLabel ?? '—'} |\n\n`;
+            markdown += `- Más rápido: **${comparison.winnerTime}**\n`;
+            markdown += `- Menor TTFT: **${comparison.winnerTtft}**\n`;
+            markdown += `- Mayor TPS: **${comparison.winnerTps}**\n`;
+            markdown += `- Menor costo: **${comparison.winnerCost}**\n\n`;
+            markdown += `_Métricas de la generación. La calidad la decide quien lee._\n\n`;
         }
 
         sessions.forEach(session => {
-            md += `## ${session.name} (${session.model || 'Sin configurar'})\n\n`;
-            session.messages.forEach(m => {
-                md += `### ${m.role === 'user' ? 'Tú' : 'AI'}\n`;
-                if (includeReasoning && m.reasoning) {
-                    md += `> **Proceso de pensamiento:**\n> ${m.reasoning.split('\n').join('\n> ')}\n\n`;
+            markdown += `## ${session.name} (${session.model || 'Sin configurar'})\n\n`;
+            session.messages.forEach(message => {
+                markdown += `### ${message.role === 'user' ? 'Tú' : 'AI'}\n`;
+                if (includeReasoning && message.reasoning) {
+                    markdown += `> **Proceso de pensamiento:**\n> ${message.reasoning.split('\n').join('\n> ')}\n\n`;
                 }
-                md += `${m.content}\n\n`;
+                if (message.error) {
+                    markdown += `> **Error (${message.error.type}):** ${message.error.message}\n\n`;
+                }
+                if (message.content) markdown += `${message.content}\n\n`;
             });
-            md += `---\n\n`;
+            markdown += `---\n\n`;
         });
 
-        return md;
+        return markdown;
     }
 
     private fileName(sessions: ChatSession[], config: GlobalConfig): string {
-        const part = (s: ChatSession) => (s.model || 'llm').split('/').pop() || 'llm';
+        const part = (session?: ChatSession) => (session?.model || 'llm').split('/').pop() || 'llm';
         return config.isCompareMode && sessions[1]
             ? `comparacion-${part(sessions[0])}-vs-${part(sessions[1])}`
             : part(sessions[0]);
     }
 
-    private ms(v: number | null): string {
-        return v === null ? '—' : `${Math.round(v)} ms`;
+    private ms(value: number | null): string {
+        return value === null ? '—' : `${Math.round(value)} ms`;
     }
 
-    private n(v: number | null): string {
-        return v === null ? '—' : v.toFixed(1);
+    private n(value: number | null): string {
+        return value === null ? '—' : value.toFixed(1);
     }
 
-    private download(blob: Blob, filename: string) {
+    private download(blob: Blob, filename: string): void {
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
         URL.revokeObjectURL(url);
     }
 }

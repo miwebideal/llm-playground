@@ -1,22 +1,22 @@
 // src/app/features/sidebar/sidebar.component.ts
 
-import { Component, signal, inject, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { GlobalConfigStore } from '../../core/stores/global-config.store';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { ConfigStore } from '../../core/stores/config.store';
 import { SessionStore } from '../../core/stores/session.store';
+import { GlobalConfig } from '../../core/models';
 import { ToggleComponent } from '../../components/toggle/toggle.component';
 import { SidebarConnectionComponent } from './sidebar-connection/sidebar-connection.component';
 import { SidebarParametersComponent } from './sidebar-parameters/sidebar-parameters.component';
 import { SidebarOptionsComponent } from './sidebar-options/sidebar-options.component';
-
-import { LucideX, LucideSettings, LucideChevronRight, LucideChevronLeft, LucideExternalLink } from '@lucide/angular';
+import { LucideX, LucideSettings, LucideChevronLeft, LucideExternalLink } from '@lucide/angular';
 
 @Component({
     selector: 'app-sidebar',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, ToggleComponent,
+        ToggleComponent,
         SidebarConnectionComponent, SidebarParametersComponent, SidebarOptionsComponent,
-        LucideX, LucideSettings, LucideChevronRight, LucideChevronLeft, LucideExternalLink
+        LucideX, LucideSettings, LucideChevronLeft, LucideExternalLink
     ],
     templateUrl: './sidebar.component.html'
 })
@@ -25,21 +25,34 @@ export class SidebarComponent {
     isOpenMobile = input<boolean>(false);
     closeMobile = output<void>();
 
-    isCollapsedDesktop = signal<boolean>(false);
-    activeSessionId = signal<string>('session-a');
+    readonly isCollapsedDesktop = signal(false);
 
-    private configStore = inject(GlobalConfigStore);
+    private configStore = inject(ConfigStore);
     private sessionStore = inject(SessionStore);
 
     readonly globalConfig = this.configStore.state;
     readonly sessions = this.sessionStore.sessions;
+    readonly activeSessionId = computed(() => this.configStore.state().activeSessionId);
 
-    toggleDesktop() {
-        this.isCollapsedDesktop.update(v => !v);
+    constructor() {
+        effect(() => {
+            const sessions = this.sessions();
+            const current = this.activeSessionId();
+            if (sessions.length && !sessions.some(session => session.id === current)) {
+                this.configStore.update('activeSessionId', sessions[0].id);
+            }
+        });
     }
 
-    updateGlobal(key: keyof ReturnType<typeof this.configStore.state>, value: any) {
-        this.configStore.update({ [key]: value });
+    toggleDesktop(): void {
+        this.isCollapsedDesktop.update(value => !value);
     }
 
+    setActiveSession(id: string): void {
+        this.configStore.update('activeSessionId', id);
+    }
+
+    updateGlobal<K extends keyof GlobalConfig>(key: K, value: GlobalConfig[K]): void {
+        this.configStore.update(key, value);
+    }
 }

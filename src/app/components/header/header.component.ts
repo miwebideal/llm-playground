@@ -1,9 +1,9 @@
 // src/app/components/header/header.component.ts
 
-import { Component, inject, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, computed, inject, output, signal } from '@angular/core';
 import { ThemeService } from '../../core/services/theme.service';
+import { ConfigStore } from '../../core/stores/config.store';
 import { ToggleComponent } from '../toggle/toggle.component';
-
 import {
     LucideZap, LucideMenu, LucideSun, LucideMoon, LucideDownload, LucideCopy, LucideFileBraces,
     LucideFileText, LucideChevronDown
@@ -11,6 +11,7 @@ import {
 
 @Component({
     selector: 'app-header',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         ToggleComponent,
         LucideZap, LucideMenu, LucideSun, LucideMoon,
@@ -21,25 +22,45 @@ import {
 export class HeaderComponent {
 
     theme = inject(ThemeService);
+    private configStore = inject(ConfigStore);
 
     toggleConfig = output<void>();
     exportJson = output<boolean>();
     exportMd = output<boolean>();
     copyChat = output<boolean>();
 
-    isExportMenuOpen = signal(false);
-    includeReasoning = signal(true);
+    readonly isExportMenuOpen = signal(false);
+    readonly includeReasoning = computed(() => this.configStore.state().includeReasoningExport);
 
-    toggleExportMenu() {
-        this.isExportMenuOpen.update(v => !v);
+    toggleExportMenu(): void {
+        this.isExportMenuOpen.update(value => !value);
     }
 
-    closeExportMenu() {
+    closeExportMenu(): void {
         this.isExportMenuOpen.set(false);
     }
 
-    onExportJson() { this.exportJson.emit(this.includeReasoning()); this.closeExportMenu(); }
-    onExportMd() { this.exportMd.emit(this.includeReasoning()); this.closeExportMenu(); }
-    onCopyChat() { this.copyChat.emit(this.includeReasoning()); this.closeExportMenu(); }
+    setIncludeReasoning(value: boolean): void {
+        this.configStore.update('includeReasoningExport', value);
+    }
 
+    onExportJson(): void {
+        this.exportJson.emit(this.includeReasoning());
+        this.closeExportMenu();
+    }
+
+    onExportMd(): void {
+        this.exportMd.emit(this.includeReasoning());
+        this.closeExportMenu();
+    }
+
+    onCopyChat(): void {
+        this.copyChat.emit(this.includeReasoning());
+        this.closeExportMenu();
+    }
+
+    @HostListener('document:keydown.escape')
+    onEscape(): void {
+        this.closeExportMenu();
+    }
 }

@@ -1,17 +1,18 @@
 // src/app/features/sidebar/sidebar-parameters/sidebar-parameters.component.ts
 
-import { Component, computed, inject, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChatSession, DEFAULT_SESSION_SETTINGS } from '../../../core/models';
+import { ModelRegistryService } from '../../../core/registry/model-registry.service';
 import { SessionStore } from '../../../core/stores/session.store';
 import { ModalService } from '../../../core/services/modal.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ToggleComponent } from '../../../components/toggle/toggle.component';
-
-import { LucideRotateCcw } from '@lucide/angular';
+import { LucideRotateCcw, LucideTriangleAlert } from '@lucide/angular';
 
 @Component({
     selector: 'app-sidebar-parameters',
-    imports: [CommonModule, ToggleComponent, LucideRotateCcw],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ToggleComponent, LucideRotateCcw, LucideTriangleAlert],
     templateUrl: './sidebar-parameters.component.html'
 })
 export class SidebarParametersComponent {
@@ -19,32 +20,53 @@ export class SidebarParametersComponent {
     sessionId = input.required<string>();
 
     private sessionStore = inject(SessionStore);
+    private registry = inject(ModelRegistryService);
     private modalService = inject(ModalService);
     private toast = inject(ToastService);
 
-    session = computed(() => this.sessionStore.sessions().find(s => s.id === this.sessionId())!);
+    readonly session = computed(() => {
+        const id = this.sessionId();
+        return this.sessionStore.sessions().find(session => session.id === id)
+            ?? this.sessionStore.sessions()[0];
+    });
 
-    update(key: 'useParams' | 'temperature' | 'topP' | 'maxTokens' | 'jsonMode' | 'systemPrompt', value: any) {
-        this.sessionStore.updateSession(this.sessionId(), { [key]: value });
+    readonly capabilities = computed(() => {
+        const session = this.session();
+        return session ? this.registry.capabilities(session) : null;
+    });
+
+    readonly tokenLabel = computed(() => {
+        const caps = this.capabilities();
+        return caps ? this.registry.tokenLimitLabel(caps.tokenLimit) : 'Max tokens';
+    });
+
+    readonly restrictedLabels = computed(() => {
+        const caps = this.capabilities();
+        return caps ? this.registry.restrictedParamLabels(caps) : [];
+    });
+
+    update<K extends keyof ChatSession>(key: K, value: ChatSession[K]): void {
+        this.sessionStore.updateSession(this.sessionId(), { [key]: value } as Partial<ChatSession>);
     }
 
-    async resetSettings() {
+    onNumber(key: 'temperature' | 'topP' | 'maxTokens', event: Event): void {
+        const value = (event.target as HTMLInputElement).valueAsNumber;
+        if (Number.isFinite(value)) this.update(key, value);
+    }
+
+    onSystemPrompt(event: Event): void {
+        this.update('systemPrompt', (event.target as HTMLTextAreaElement).value);
+    }
+
+    async resetSettings(): Promise<void> {
         const confirmed = await this.modalService.confirm({
             title: 'Restablecer parámetros',
             message: '¿Volver a los valores por defecto para esta sesión?',
             confirmText: 'Restablecer'
         });
-        if (confirmed) {
-            this.sessionStore.updateSession(this.sessionId(), {
-                useParams: true,
-                temperature: 0.7,
-                topP: 1,
-                maxTokens: 8192,
-                jsonMode: false,
-                systemPrompt: 'You are a helpful assistant.'
-            });
-            this.toast.success('Parámetros restablecidos');
-        }
-    }
+        if (!confirmed) return;
 
+        this.sessionStore.updateSession(this.sessionId(), { ...DEFAULT_SESSION_SETTINGS });
+        this.toast.success('Parámetros restablecidos');
+    }
 }

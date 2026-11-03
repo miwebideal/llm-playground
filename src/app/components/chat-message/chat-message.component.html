@@ -2,20 +2,16 @@
 
 <div class="group animate-fade-in mb-4">
 
-    <!-- Contenedor -->
-    <div [class]="isUser ? 'flex justify-end' : 'flex justify-start'">
+    <!-- CONTAINER -->
+    <div [class]="isUser() ? 'flex justify-end' : 'flex justify-start'">
+        <div class="relative" [class]="isUser() ? 'bubble-user' : 'bubble-ai'">
 
-        <div class="relative" [class]="isUser ? 'bubble-user' : 'bubble-ai'">
-
-            <!-- Header -->
+            <!-- HEADER -->
             <div class="flex items-center gap-2 mb-1.5">
-                <span class="text-xs text-text-main">
-                    {{ isUser ? 'Vos' : 'AI' }}
-                </span>
-                <span class="text-[10px] opacity-50">{{ formatTime(msg( ).timestamp) }}</span>
+                <span class="text-xs text-text-main">{{ isUser() ? 'Vos' : 'AI' }}</span>
+                <span class="text-[10px] opacity-50">{{ formatTime(msg().timestamp) }}</span>
 
-                <!-- Badge de Modelo y Proveedor -->
-                @if (!isUser && msg().model) {
+                @if (!isUser() && msg().model) {
                 <span class="badge-model">
                     <svg lucideBot class="w-3 h-3"></svg>
                     @if (msg().provider && msg().provider !== 'unknown') {
@@ -26,7 +22,7 @@
                 </span>
                 }
 
-                @if (!isUser && msg().isStreaming) {
+                @if (!isUser() && msg().isStreaming) {
                 <span class="flex items-center gap-1">
                     <span class="w-1.5 h-1.5 bg-text-main rounded-full animate-pulse"></span>
                     <span class="text-[10px] text-text-muted">streaming...</span>
@@ -34,16 +30,14 @@
                 }
             </div>
 
-            <!-- Contenido del Mensaje -->
+            <!-- CONTENT -->
             <div class="text-sm leading-relaxed wrap-break-word min-w-0">
-                @if (msg().error) {
-                <div class="text-error flex items-center gap-2">
-                    <svg lucideCircleAlert class="w-4 h-4 shrink-0"></svg>
-                    {{ msg().error }}
-                </div>
-                } @else {
+                @if (msg().error; as error) {
+                <app-error-banner [error]="error" (retry)="onRetry.emit(msg().id)"></app-error-banner>
+                }
 
-                <!-- Pensamiento -->
+                @if (!isUser()) {
+                <!-- REASONING -->
                 @if (msg().reasoning) {
                 <details class="mb-3 group/details" open>
                     <summary
@@ -52,83 +46,56 @@
                         <span>Proceso de pensamiento</span>
                         <svg lucideChevronDown class="w-3 h-3 transition-transform group-open/details:rotate-180"></svg>
                     </summary>
-                    <div
-                        class="pl-4 border-l-2 border-border-base text-sm text-text-muted italic markdown-body !prose-p:text-text-muted">
-                        <div [innerHTML]="markdown.parse(msg().reasoning!)"></div>
+                    <div class="pl-4 border-l-2 border-border-base text-sm text-text-muted italic">
+                        <app-markdown [content]="msg().reasoning || ''" cssClass="markdown-body"></app-markdown>
                     </div>
                 </details>
                 }
+                }
 
-                <!-- Texto Markdown -->
-                <div [class]="isUser ? 'markdown-user' : 'markdown-body'" [appCodeCopy]="msg().isStreaming">
-                    <div [innerHTML]="markdown.parse(msg().content)"></div>
-                </div>
+                <!-- MESSAGE -->
+                @if (msg().content || msg().isStreaming) {
+                <app-markdown [appCodeCopy]="!!msg().isStreaming" [content]="msg().content"
+                    [streaming]="!!msg().isStreaming" [cssClass]="isUser() ? 'markdown-user' : 'markdown-body'">
+                </app-markdown>
+                }
 
                 @if (msg().isStreaming) {
                 <span class="inline-block w-2 h-4 bg-text-main ml-1 animate-pulse align-middle"></span>
                 }
+            </div>
+
+            <!-- METRICS -->
+            @if (msg().metrics; as metrics) {
+            @if (!isUser() && !msg().isStreaming) {
+            <div class="mt-2 pt-2 border-t border-border-base flex flex-wrap items-center gap-2 text-[10px] font-medium text-text-muted">
+                @if (metrics.ttft) { <span class="metric">TTFT: {{ metrics.ttft }}ms</span> }
+                @if (metrics.totalTime) { <span class="metric">Total: {{ metrics.totalTime }}ms</span> }
+                @if (metrics.tokensOut != null) { <span class="metric">{{ metrics.tokensOut }} tokens{{ metrics.estimated ? ' ~' : '' }}</span> }
+                @if (tps()) { <span class="metric border-primary/20 text-primary" title="Tokens por segundo">⚡ {{ tps() }} TPS</span> }
+                @if (cost()) { <span class="metric" title="Costo estimado (input + output)">💰 {{ cost() }}</span> }
+                @if (msg().finishReason) { <span class="metric uppercase">{{ msg().finishReason }}</span> }
+                @if (isInterrupted()) { <span class="metric text-warning">Truncado</span> }
+            </div>
+            }
+            }
+
+            <!-- ACTIONS -->
+            @if (!isUser()) {
+            <div class="mt-2 flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity text-text-muted">
+                @if (!msg().isStreaming && !msg().error && isInterrupted()) {
+                <button (click)="onContinue.emit(msg().id)" title="Continuar respuesta" class="btn-icon" aria-label="Continuar respuesta">
+                    <svg lucidePlay class="w-3.5 h-3.5"></svg>
+                </button>
                 }
+                <button (click)="copyToClipboard()" title="Copiar mensaje" class="btn-icon" aria-label="Copiar mensaje">
+                    <svg lucideCopy class="w-3.5 h-3.5"></svg>
+                </button>
+                <button (click)="onDelete.emit(msg().id)" title="Eliminar mensaje" class="btn-icon" aria-label="Eliminar mensaje">
+                    <svg lucideTrash2 class="w-3.5 h-3.5"></svg>
+                </button>
             </div>
-
-            <!-- FOOTER -->
-            <div class="mt-2 pt-2 border-t border-border-base flex items-center justify-between gap-6 w-full">
-
-                <!-- METRICS -->
-                <div class="flex flex-wrap items-center gap-2 text-[10px] font-medium text-text-muted">
-                    @if (msg().metrics && !msg().isStreaming) {
-                    @if (msg().metrics!.ttft) {
-                    <span
-                        class="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10">
-                        TTFT: {{ msg().metrics!.ttft }}ms
-                    </span>
-                    }
-                    @if (msg().metrics!.totalTime) {
-                    <span
-                        class="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10">
-                        Total: {{ msg().metrics!.totalTime }}ms
-                    </span>
-                    }
-                    @if (msg().metrics!.tokensOut) {
-                    <span
-                        class="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10">
-                        {{ msg().metrics!.tokensOut }} tokens
-                    </span>
-                    }
-                    @if (getTPS(msg().metrics)) {
-                    <span class="bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20"
-                        title="Tokens por segundo">
-                        ⚡ {{ getTPS(msg().metrics) }} TPS
-                    </span>
-                    }
-                    @if (getCost(msg().metrics, msg().model)) {
-                    <span
-                        class="bg-black/5 dark:bg-white/10 px-1.5 py-0.5 rounded border border-black/10 dark:border-white/10"
-                        title="Costo estimado (Input + Output)">
-                        💰 {{ getCost(msg().metrics, msg().model) }}
-                    </span>
-                    }
-                    }
-                </div>
-
-                <!-- ACTIONS -->
-                <div class="flex items-center gap-1 opacity-75 ml-auto shrink-0 text-text-muted">
-                    @if (!isUser && !msg().isStreaming && !msg().error && isInterrupted) {
-                    <button (click)="onContinue.emit(msg().id)" title="Continuar respuesta" class="btn-icon"
-                        aria-label="Continuar respuesta">
-                        <svg lucidePlay class="w-3.5 h-3.5"></svg>
-                    </button>
-                    }
-                    <button (click)="copyToClipboard()" title="Copiar mensaje" class="btn-icon"
-                        aria-label="Copiar mensaje">
-                        <svg lucideCopy class="w-3.5 h-3.5"></svg>
-                    </button>
-                    <button (click)="onDelete.emit(msg().id)" title="Eliminar mensaje" class="btn-icon"
-                        aria-label="Eliminar mensaje">
-                        <svg lucideTrash2 class="w-3.5 h-3.5"></svg>
-                    </button>
-                </div>
-            </div>
-
+            }
         </div>
     </div>
 </div>

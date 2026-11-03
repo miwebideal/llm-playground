@@ -1,54 +1,96 @@
 // src/app/core/services/stream-reader.service.ts
 
 import { Injectable, inject } from '@angular/core';
-import { StreamParserService, StreamChunk } from './stream-parser.service';
+import { AppError, isAppError } from '../models';
+import { abortedError, timeoutError } from './api-error.mapper';
+import { StreamChunk, StreamParserService } from './stream-parser.service';
+
+export interface ReadStreamOptions {
+    signal?: AbortSignal;
+    idleTimeoutMs?: number;
+    onChunk: (chunk: StreamChunk) => void;
+}
+
+const DEFAULT_IDLE_TIMEOUT_MS = 120_000;
 
 @Injectable({ providedIn: 'root' })
 export class StreamReaderService {
 
     private parser = inject(StreamParserService);
 
-    /**
-     * Lee un ReadableStream de una respuesta HTTP, decodifica los bytes,
-     * separa por líneas y emite los chunks parseados.
-     */
-    async readStream(
-        response: Response,
-        stopSignal: () => boolean,
-        onChunk: (chunk: StreamChunk) => void
-    ): Promise<void> {
+    async readStream(response: Response, options: ReadStreamOptions): Promise<void> {
         const reader = response.body?.getReader();
-        if (!reader) throw new Error('No se pudo leer el stream');
+        if (!reader) throw this.streamError('La respuesta no tiene cuerpo legible.');
 
         const decoder = new TextDecoder();
+        const idleTimeoutMs = options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
         let buffer = '';
 
         try {
             while (true) {
-                if (stopSignal()) break;
+                if (options.signal?.aborted) throw abortedError();
 
-                const { done, value } = await reader.read();
+                const { done, value } = await this.readWithTimeout(reader, options.signal, idleTimeoutMs);
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-
-                // El último elemento puede estar incompleto, lo guardamos en el buffer
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                    const chunk = this.parser.parseLine(line);
-                    if (chunk) onChunk(chunk);
-                }
+                buffer = this.consume(buffer, options.onChunk);
             }
 
-            // Procesar lo que haya quedado en el buffer al finalizar
-            if (buffer) {
-                const chunk = this.parser.parseLine(buffer);
-                if (chunk) onChunk(chunk);
-            }
+            buffer += decoder.decode();
+            this.consume(buffer, options.onChunk, true);
+        } catch (error) {
+            if (isAppError(error)) throw error;
+            if (error instanceof Error && error.name === 'AbortError') throw abortedError();
+            throw this.streamError(error instanceof Error ? error.message : 'Error leyendo el stream');
         } finally {
-            reader.releaseLock();
+            try { await reader.cancel(); } catch { /* ignore */ }
+            try { reader.releaseLock(); } catch { /* ignore */ }
         }
+    }
+
+    private consume(buffer: string, onChunk: (chunk: StreamChunk) => void, flush = false): string {
+        const lines = buffer.split(/\r?\n/);
+        const rest = flush ? '' : (lines.pop() ?? '');
+
+        for (const line of lines) {
+            const chunk = this.parser.parseLine(line);
+            if (!chunk) continue;
+            if (chunk.error) throw chunk.error;
+            onChunk(chunk);
+        }
+
+        return rest;
+    }
+
+    private readWithTimeout(
+        reader: ReadableStreamDefaultReader<Uint8Array>,
+        signal: AbortSignal | undefined,
+        timeoutMs: number
+    ): Promise<ReadableStreamReadResult<Uint8Array>> {
+        if (signal?.aborted) return Promise.reject(abortedError());
+
+        return new Promise((resolve, reject) => {
+            let settled = false;
+            const finish = (fn: () => void) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                signal?.removeEventListener('abort', onAbort);
+                fn();
+            };
+            const timer = setTimeout(() => finish(() => reject(timeoutError(Math.round(timeoutMs / 1000)))), timeoutMs);
+            const onAbort = () => finish(() => reject(abortedError()));
+            signal?.addEventListener('abort', onAbort, { once: true });
+
+            reader.read().then(
+                result => finish(() => resolve(result)),
+                error => finish(() => reject(error))
+            );
+        });
+    }
+
+    private streamError(message: string): AppError {
+        return { type: 'stream', message: `Error de streaming: ${message}`, retryable: true };
     }
 }

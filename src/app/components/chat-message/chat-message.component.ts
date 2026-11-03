@@ -1,64 +1,53 @@
 // src/app/components/chat-message/chat-message.component.ts
 
-import { Component, inject, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { Message } from '../../models/chat.models';
-import { SafeMarkdownService } from '../../core/services/safe-markdown.service';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Message } from '../../core/models';
 import { ClipboardService } from '../../core/services/clipboard.service';
+import { MetricsService } from '../../core/services/metrics.service';
+import { MarkdownComponent } from '../../shared/components/markdown/markdown.component';
+import { ErrorBannerComponent } from '../../shared/components/error-banner/error-banner.component';
 import { CodeCopyDirective } from '../../directives/code-copy.directive';
-
 import {
-    LucideCircleAlert, LucideCopy, LucideTrash2,
+    LucideCopy, LucideTrash2,
     LucideBrain, LucideChevronDown, LucideBot, LucidePlay
 } from '@lucide/angular';
-import { MetricsService } from '../../core/services/metrics.service';
 
 @Component({
     selector: 'app-chat-message',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, CodeCopyDirective,
-        LucideCircleAlert, LucideCopy, LucideTrash2, LucideBrain, LucideChevronDown, LucideBot, LucidePlay
+        MarkdownComponent, ErrorBannerComponent, CodeCopyDirective,
+        LucideCopy, LucideTrash2, LucideBrain, LucideChevronDown, LucideBot, LucidePlay
     ],
     templateUrl: './chat-message.component.html'
 })
 export class ChatMessageComponent {
 
-    markdown = inject(SafeMarkdownService);
     private clipboard = inject(ClipboardService);
     private metrics = inject(MetricsService);
 
     msg = input.required<Message>();
     onDelete = output<string>();
     onContinue = output<string>();
+    onRetry = output<string>();
 
-    get isUser(): boolean {
-        return this.msg().role === 'user';
-    }
-
-    get isInterrupted(): boolean {
-        const fr = this.msg().finishReason?.toLowerCase();
-        return fr === 'length' || fr === 'max_tokens';
-    }
+    readonly isUser = computed(() => this.msg().role === 'user');
+    readonly isInterrupted = computed(() => {
+        const reason = this.msg().finishReason?.toLowerCase();
+        return reason === 'length' || reason === 'max_tokens';
+    });
+    readonly tps = computed(() => this.metrics.formatTPS(this.msg().metrics));
+    readonly cost = computed(() => this.metrics.formatCost(this.msg().metrics, this.msg().provider, this.msg().model));
 
     formatTime(date: Date): string {
         return new Date(date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     }
 
-    async copyToClipboard() {
-        const m = this.msg();
-        const textToCopy = m.reasoning
-            ? `🧠 Proceso de pensamiento:\n${m.reasoning}\n\nRespuesta:\n${m.content}`
-            : m.content;
-
-        await this.clipboard.copy(textToCopy, 'Mensaje copiado al portapapeles');
+    async copyToClipboard(): Promise<void> {
+        const message = this.msg();
+        const text = message.reasoning
+            ? `🧠 Proceso de pensamiento:\n${message.reasoning}\n\nRespuesta:\n${message.content}`
+            : message.content;
+        await this.clipboard.copy(text, 'Mensaje copiado al portapapeles');
     }
-
-    getTPS(metrics: Message['metrics']): string | null {
-        return this.metrics.formatTPS(metrics);
-    }
-
-    getCost(metrics: Message['metrics'], model?: string): string | null {
-        return this.metrics.formatCost(metrics, model);
-    }
-
 }

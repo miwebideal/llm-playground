@@ -14,7 +14,7 @@ Así nació LLM Playground. Una herramienta hecha por devs para devs, para que t
 Esta es una Single Page Application (SPA) 100% frontend. 
 - 📉 **Cero Telemetría:** No hay rastreadores, analíticas ni scripts de terceros.
 - 🚫 **Sin Backend Intermediario:** Las peticiones a las APIs de IA se hacen directamente desde tu navegador al proveedor.
-- 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en el `localStorage` de tu navegador (encriptado). 
+- 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en tu navegador. El token se cifra con AES-GCM usando una clave local no exportable (IndexedDB). Esto evita lecturas casuales, pero **no protege contra XSS ni contra acceso al perfil del navegador**.
 
 ## ✨ Características Principales
 - **Soporte Multi-Proveedor:** Compatible con cualquier API que use el estándar de OpenAI (Fireworks, DeepInfra, Groq, Together, OpenRouter, Gemini, etc.).

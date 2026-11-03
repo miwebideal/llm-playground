@@ -8,8 +8,7 @@
         <div class="flex items-center gap-2 mb-0.5">
             <span class="text-xs font-bold text-text-muted uppercase tracking-wider">{{ session().name }}</span>
             @if (session().providerId && session().providerId !== 'unknown') {
-            <span class="text-xs px-1.5 rounded bg-primary/10 text-primary font-semibold capitalize">{{
-                session().providerId }}</span>
+            <span class="text-xs px-1.5 rounded bg-primary/10 text-primary font-semibold capitalize">{{ session().providerId }}</span>
             }
         </div>
         <div class="text-sm font-medium truncate text-text-main" [title]="session().model || 'Sin configurar'">
@@ -18,8 +17,8 @@
     </div>
     }
 
-    <!-- SCROLL AREA -->
-    <div #messagesContainer class="flex-1 overflow-y-auto overflow-x-hidden p-4 scroll-smooth">
+    <!-- MESSAGES -->
+    <div #messagesContainer class="flex-1 overflow-y-auto overflow-x-hidden p-4">
         @if (session().messages.length === 0) {
         <div class="h-full flex flex-col items-center justify-center text-text-muted space-y-4">
             <div class="w-16 h-16 rounded-2xl bg-surface-alt flex items-center justify-center">
@@ -32,9 +31,18 @@
         </div>
         }
 
-        @for (msg of session().messages; track msg.id) {
-        <app-chat-message [msg]="msg" (onDelete)="deleteMessage($event)"
-            (onContinue)="continueMessage($event)"></app-chat-message>
+        @for (message of session().messages; track message.id) {
+        <app-chat-message [msg]="message" (onDelete)="deleteMessage($event)"
+            (onContinue)="continueMessage($event)" (onRetry)="retryMessage($event)"></app-chat-message>
         }
     </div>
+
+    <!-- SCROLL TO BOTTOM -->
+    @if (!pinnedToBottom() && session().messages.length > 0) {
+    <button type="button" (click)="scrollToBottom()"
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-border-base shadow-lg text-xs font-medium text-text-main hover:border-primary/60 transition-colors"
+        aria-label="Ir al final">
+        <svg lucideArrowDown class="w-3.5 h-3.5"></svg> Ir al final
+    </button>
+    }
 </div>

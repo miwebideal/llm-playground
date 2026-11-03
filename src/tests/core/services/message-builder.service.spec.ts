@@ -2,75 +2,62 @@
 
 import { TestBed } from '@angular/core/testing';
 import { MessageBuilderService } from '../../../app/core/services/message-builder.service';
-import { ChatSession, GlobalConfig, Message } from '../../../app/models/chat.models';
+import { ModelRegistryService } from '../../../app/core/registry/model-registry.service';
+import { ChatSession, GlobalConfig, Message, createSession } from '../../../app/core/models';
+
+function session(partial: Partial<ChatSession>): ChatSession {
+    return { ...createSession('session-a', 'Modelo A'), ...partial };
+}
+
+function message(partial: Partial<Message> & Pick<Message, 'role' | 'content'>): Message {
+    return { id: crypto.randomUUID(), timestamp: new Date(), ...partial };
+}
+
+const config = (partial: Partial<GlobalConfig>): GlobalConfig => ({
+    includeHistory: false,
+    streamMode: false,
+    isCompareMode: false,
+    includeReasoningExport: true,
+    activeSessionId: 'session-a',
+    splitWidth: 50,
+    ...partial
+});
 
 describe('MessageBuilderService', () => {
     let service: MessageBuilderService;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [MessageBuilderService]
-        });
+        TestBed.configureTestingModule({ providers: [ModelRegistryService, MessageBuilderService] });
         service = TestBed.inject(MessageBuilderService);
     });
 
-    it('debería crearse correctamente', () => {
-        expect(service).toBeTruthy();
+    it('incluye el system prompt si useParams y el modelo lo soporta', () => {
+        const result = service.build('Hola', session({ systemPrompt: 'Sos útil.' }), config({}), []);
+        expect(result[0]).toEqual({ role: 'system', content: 'Sos útil.' });
+        expect(result.at(-1)).toEqual({ role: 'user', content: 'Hola' });
     });
 
-    it('debería incluir el system prompt si useParams es true y el prompt no está vacío', () => {
-        const session = { useParams: true, systemPrompt: 'Sos un asistente útil.' } as ChatSession;
-        const config = { includeHistory: false } as GlobalConfig;
-
-        const result = service.build('Hola', session, config, []);
-
-        expect(result.length).toBe(2);
-        expect(result[0].role).toBe('system');
-        expect(result[0].content).toBe('Sos un asistente útil.');
-        expect(result[1].role).toBe('user');
-        expect(result[1].content).toBe('Hola');
-    });
-
-    it('NO debería incluir el system prompt si useParams es false', () => {
-        const session = { useParams: false, systemPrompt: 'Sos un asistente útil.' } as ChatSession;
-        const config = { includeHistory: false } as GlobalConfig;
-
-        const result = service.build('Hola', session, config, []);
-
+    it('no incluye system prompt si useParams es false', () => {
+        const result = service.build('Hola', session({ useParams: false, systemPrompt: 'Sos útil.' }), config({}), []);
         expect(result.length).toBe(1);
         expect(result[0].role).toBe('user');
-        expect(result[0].content).toBe('Hola');
     });
 
-    it('debería incluir el historial si includeHistory es true (ignorando errores y streaming)', () => {
-        const session = { useParams: false, systemPrompt: '' } as ChatSession;
-        const config = { includeHistory: true } as GlobalConfig;
-
+    it('incluye historial válido e ignora errores y streaming', () => {
         const history: Message[] = [
-            { id: '1', role: 'user', content: 'Pregunta 1', timestamp: new Date() },
-            { id: '2', role: 'assistant', content: 'Respuesta 1', timestamp: new Date() },
-            { id: '3', role: 'assistant', content: 'Error', error: 'Fallo', timestamp: new Date() }, // Debe ignorarse
-            { id: '4', role: 'assistant', content: 'Escribiendo...', isStreaming: true, timestamp: new Date() } // Debe ignorarse
+            message({ role: 'user', content: 'Pregunta 1' }),
+            message({ role: 'assistant', content: 'Respuesta 1' }),
+            message({ role: 'assistant', content: '', error: { type: 'auth', message: 'Fallo', retryable: false } }),
+            message({ role: 'assistant', content: 'Escribiendo', isStreaming: true })
         ];
 
-        const result = service.build('Pregunta 2', session, config, history);
-
-        expect(result.length).toBe(3); // Pregunta 1, Respuesta 1, Pregunta 2
-        expect(result[0].content).toBe('Pregunta 1');
-        expect(result[1].content).toBe('Respuesta 1');
-        expect(result[2].content).toBe('Pregunta 2');
+        const result = service.build('Pregunta 2', session({ useParams: false }), config({ includeHistory: true }), history);
+        expect(result.map(m => m.content)).toEqual(['Pregunta 1', 'Respuesta 1', 'Pregunta 2']);
     });
 
-    it('NO debería incluir el historial si includeHistory es false', () => {
-        const session = { useParams: false, systemPrompt: '' } as ChatSession;
-        const config = { includeHistory: false } as GlobalConfig;
-
-        const history: Message[] = [
-            { id: '1', role: 'user', content: 'Pregunta 1', timestamp: new Date() }
-        ];
-
-        const result = service.build('Pregunta 2', session, config, history);
-
+    it('no incluye historial si includeHistory es false', () => {
+        const history: Message[] = [message({ role: 'user', content: 'Pregunta 1' })];
+        const result = service.build('Pregunta 2', session({ useParams: false }), config({}), history);
         expect(result.length).toBe(1);
         expect(result[0].content).toBe('Pregunta 2');
     });

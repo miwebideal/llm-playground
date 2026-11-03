@@ -1,17 +1,18 @@
 // src/app/features/chat/chat-column/chat-column.component.ts
 
-import { Component, input, viewChild, ElementRef, effect, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ChatSession } from '../../../models/chat.models';
+import { ChangeDetectionStrategy, Component, ElementRef, effect, inject, input, signal, viewChild } from '@angular/core';
+import { ChatSession } from '../../../core/models';
 import { ChatMessageComponent } from '../../../components/chat-message/chat-message.component';
 import { LlmOrchestratorService } from '../../../core/services/llm-orchestrator.service';
 import { SessionStore } from '../../../core/stores/session.store';
+import { LucideMessageSquare, LucideArrowDown } from '@lucide/angular';
 
-import { LucideMessageSquare } from '@lucide/angular';
+const PIN_THRESHOLD_PX = 48;
 
 @Component({
     selector: 'app-chat-column',
-    imports: [CommonModule, ChatMessageComponent, LucideMessageSquare],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ChatMessageComponent, LucideMessageSquare, LucideArrowDown],
     templateUrl: './chat-column.component.html'
 })
 export class ChatColumnComponent {
@@ -19,34 +20,74 @@ export class ChatColumnComponent {
     session = input.required<ChatSession>();
     isCompareMode = input<boolean>(false);
 
-    private messagesContainerRef = viewChild<ElementRef<HTMLDivElement>>('messagesContainer');
+    private messagesContainer = viewChild<ElementRef<HTMLDivElement>>('messagesContainer');
     private orchestrator = inject(LlmOrchestratorService);
     private sessionStore = inject(SessionStore);
 
-    constructor() {
+    readonly pinnedToBottom = signal(true);
+    private lastSessionId = '';
 
-        effect((onCleanup) => {
-            const el = this.messagesContainerRef()?.nativeElement;
-            if (el) {
-                const obs = new MutationObserver(() => {
-                    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
-                    if (isNearBottom) {
-                        requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
-                    }
-                });
-                obs.observe(el, { childList: true, subtree: true, characterData: true });
-                onCleanup(() => obs.disconnect());
-            }
+    constructor() {
+        effect(onCleanup => {
+            const element = this.messagesContainer()?.nativeElement;
+            if (!element) return;
+
+            const onScroll = () => {
+                const distance = element.scrollHeight - element.scrollTop - element.clientHeight;
+                this.pinnedToBottom.set(distance < PIN_THRESHOLD_PX);
+            };
+            element.addEventListener('scroll', onScroll, { passive: true });
+
+            const observer = typeof ResizeObserver !== 'undefined'
+                ? new ResizeObserver(() => { if (this.pinnedToBottom()) this.scrollToBottom(); })
+                : null;
+            observer?.observe(element);
+
+            onCleanup(() => {
+                element.removeEventListener('scroll', onScroll);
+                observer?.disconnect();
+            });
         });
 
+        effect(() => {
+            const session = this.session();
+            const last = session.messages[session.messages.length - 1];
+            const tick = session.messages.length
+                + (last?.content.length ?? 0)
+                + (last?.reasoning?.length ?? 0);
+            void tick;
+
+            if (!this.pinnedToBottom()) return;
+            requestAnimationFrame(() => {
+                if (this.pinnedToBottom()) this.scrollToBottom();
+            });
+        });
+
+        effect(() => {
+            const sessionId = this.session().id;
+            if (sessionId === this.lastSessionId) return;
+            this.lastSessionId = sessionId;
+            this.pinnedToBottom.set(true);
+            requestAnimationFrame(() => this.scrollToBottom());
+        });
     }
 
-    deleteMessage(msgId: string) {
-        this.sessionStore.deleteMessage(this.session().id, msgId);
+    scrollToBottom(): void {
+        const element = this.messagesContainer()?.nativeElement;
+        if (!element) return;
+        this.pinnedToBottom.set(true);
+        element.scrollTop = element.scrollHeight;
     }
 
-    continueMessage(msgId: string) {
-        this.orchestrator.continueMessage(this.session().id, msgId);
+    deleteMessage(messageId: string): void {
+        this.sessionStore.deleteMessage(this.session().id, messageId);
     }
 
+    continueMessage(messageId: string): void {
+        void this.orchestrator.continueMessage(this.session().id, messageId);
+    }
+
+    retryMessage(messageId: string): void {
+        void this.orchestrator.retry(this.session().id, messageId);
+    }
 }

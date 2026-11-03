@@ -1,136 +1,232 @@
 // src/app/core/services/llm-orchestrator.service.ts
 
-import { Injectable, inject, signal } from '@angular/core';
-import { GlobalConfigStore } from '../stores/global-config.store';
-import { SessionStore } from '../stores/session.store';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+    AppError,
+    ChatSession,
+    isAppError,
+    Message,
+    toAppError
+} from '../models';
+import { activeSessions, sessionReadiness } from '../state/session.selectors';
+import { ConfigStore } from '../stores/config.store';
 import { ProviderStore } from '../stores/provider.store';
+import { SessionStore } from '../stores/session.store';
+import { estimateTokens } from '../../utils/token.utils';
 import { LlmApiService } from './llm-api.service';
 import { MessageBuilderService } from './message-builder.service';
+import { StreamChunk } from './stream-parser.service';
 import { StreamReaderService } from './stream-reader.service';
 import { ToastService } from './toast.service';
-import { StreamChunk } from './stream-parser.service';
-import { Message } from '../../models/chat.models';
+
+const CONTINUE_PROMPT = 'Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.';
+
+interface ProcessOptions {
+    existingMessageId?: string;
+    excludeMessageId?: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class LlmOrchestratorService {
 
     private api = inject(LlmApiService);
     private builder = inject(MessageBuilderService);
-    private streamReader = inject(StreamReaderService);
+    private reader = inject(StreamReaderService);
     private toast = inject(ToastService);
-    private configStore = inject(GlobalConfigStore);
+    private configStore = inject(ConfigStore);
     private sessionStore = inject(SessionStore);
     private providerStore = inject(ProviderStore);
 
-    private _isLoading = signal(false);
+    private readonly _isLoading = signal(false);
     readonly isLoading = this._isLoading.asReadonly();
 
-    private stopRequested = signal(false);
-    readonly isStopping = this.stopRequested.asReadonly();
+    readonly canRegenerate = computed(() => {
+        const sessions = this.currentActiveSessions();
+        return sessions.some(session => {
+            const last = session.messages[session.messages.length - 1];
+            return !!last && last.role === 'assistant' && !last.isStreaming && !last.error;
+        });
+    });
 
-    cancel() {
-        this.stopRequested.set(false);
-        this.api.cancel();
+    canSend(): boolean {
+        const providers = this.providerStore.providers();
+        return this.currentActiveSessions().some(session => sessionReadiness(session, providers).ready);
     }
 
-    stopGenerating() {
-        this.stopRequested.set(true);
-    }
+    async sendMessage(userContent: string): Promise<boolean> {
+        const active = this.currentActiveSessions();
+        const providers = this.providerStore.providers();
 
-    private getActiveSessions() {
-        const all = this.sessionStore.sessions();
-        return this.configStore.state().isCompareMode ? all.slice(0, 2) : [all[0]];
-    }
+        if (!active.length) {
+            this.toast.warning('No hay sesiones para enviar. Configurá un proveedor y un modelo.');
+            return false;
+        }
 
-    async sendMessage(userContent: string): Promise<void> {
-        const activeSessions = this.getActiveSessions();
+        const ready = active.filter(session => sessionReadiness(session, providers).ready);
+        if (!ready.length) {
+            const first = active[0];
+            const reason = sessionReadiness(first, providers).reason ?? 'configuración incompleta';
+            this.toast.warning(`No se puede enviar en "${first.name}": ${reason}.`);
+            return false;
+        }
 
-        for (const session of activeSessions) {
-            const provider = this.providerStore.providers().find(p => p.id === session.providerId);
-            if (!provider || !provider.apiUrl || !provider.apiToken || !session.model) {
-                this.toast.warning(`Falta configurar API URL, Token o Modelo en: ${session.name}`);
-                return;
-            }
+        const skipped = active.filter(session => !ready.includes(session));
+        if (skipped.length) {
+            this.toast.warning(`Sin configurar: ${skipped.map(s => s.name).join(', ')}. Se envía sólo a las columnas listas.`);
         }
 
         this._isLoading.set(true);
-        this.stopRequested.set(false);
-
-        const userMsgId = crypto.randomUUID();
-        for (const session of activeSessions) {
+        const userMessageId = crypto.randomUUID();
+        for (const session of ready) {
             this.sessionStore.addMessage(session.id, {
-                id: userMsgId,
+                id: userMessageId,
                 role: 'user',
                 content: userContent,
                 timestamp: new Date()
             });
         }
 
-        const tasks = activeSessions.map(session => this.processSession(session.id, userContent));
-        await Promise.all(tasks);
+        try {
+            await Promise.all(ready.map(session =>
+                this.processSession(session.id, userContent, { excludeMessageId: userMessageId })
+            ));
+        } finally {
+            this._isLoading.set(false);
+        }
 
-        this._isLoading.set(false);
+        return true;
     }
 
     async continueMessage(sessionId: string, messageId: string): Promise<void> {
-        const session = this.sessionStore.sessions().find(s => s.id === sessionId);
-        if (!session) return;
+        const session = this.findSession(sessionId);
+        const target = session?.messages.find(message => message.id === messageId);
+        if (!session || !target || target.role !== 'assistant' || target.isStreaming) return;
 
-        const targetMsg = session.messages.find(m => m.id === messageId);
-        if (!targetMsg || targetMsg.role !== 'assistant' || targetMsg.isStreaming) return;
+        const readiness = sessionReadiness(session, this.providerStore.providers());
+        if (!readiness.ready) {
+            this.fail(sessionId, messageId, {
+                type: 'invalid_params',
+                message: `No se puede continuar: ${readiness.reason}.`,
+                retryable: false
+            });
+            return;
+        }
 
         this._isLoading.set(true);
-        this.stopRequested.set(false);
+        this.sessionStore.updateMessage(sessionId, messageId, message => ({ ...message, isStreaming: true, error: undefined }));
 
-        this.sessionStore.updateMessage(sessionId, messageId, m => ({ ...m, isStreaming: true, error: undefined }));
-
-        const continuePrompt = 'Continúa exactamente desde donde te quedaste en tu última respuesta. No repitas lo que ya dijiste, no agregues introducciones ni saludos, simplemente continúa el texto o código de forma natural.';
-
-        await this.processSession(sessionId, continuePrompt, messageId);
-        this._isLoading.set(false);
+        try {
+            await this.processSession(sessionId, CONTINUE_PROMPT, { existingMessageId: messageId });
+        } finally {
+            this._isLoading.set(false);
+        }
     }
 
-    canRegenerate(): boolean {
-        const activeSessions = this.getActiveSessions();
-        return activeSessions.some(session => {
-            const last = session.messages[session.messages.length - 1];
-            return last && last.role === 'assistant' && !last.isStreaming && !last.error;
-        });
-    }
+    async retry(sessionId: string, messageId: string): Promise<void> {
+        const session = this.findSession(sessionId);
+        if (!session) return;
 
-    async regenerateLast(): Promise<void> {
-        const activeSessions = this.getActiveSessions();
-        if (activeSessions.length === 0) return;
+        const index = session.messages.findIndex(message => message.id === messageId);
+        if (index < 0) return;
 
-        const firstSession = activeSessions[0];
-        let lastUserIdx = -1;
-        for (let i = firstSession.messages.length - 1; i >= 0; i--) {
-            if (firstSession.messages[i].role === 'user') {
-                lastUserIdx = i;
+        let userIndex = -1;
+        for (let i = index - 1; i >= 0; i--) {
+            if (session.messages[i].role === 'user') {
+                userIndex = i;
                 break;
             }
         }
 
-        if (lastUserIdx === -1) return;
-        const userContent = firstSession.messages[lastUserIdx].content;
-
-        for (const session of activeSessions) {
-            this.sessionStore.truncateMessagesFrom(session.id, lastUserIdx - 1);
+        if (userIndex < 0) {
+            this.toast.warning('No se encontró el mensaje original para reintentar.');
+            return;
         }
 
-        await this.sendMessage(userContent);
+        const userMessage = session.messages[userIndex];
+        const readiness = sessionReadiness(session, this.providerStore.providers());
+        if (!readiness.ready) {
+            this.fail(sessionId, messageId, {
+                type: 'invalid_params',
+                message: `No se puede reintentar: ${readiness.reason}.`,
+                retryable: false
+            });
+            return;
+        }
+
+        this.sessionStore.truncateMessagesFrom(sessionId, userIndex);
+
+        this._isLoading.set(true);
+        try {
+            await this.processSession(sessionId, userMessage.content, { excludeMessageId: userMessage.id });
+        } finally {
+            this._isLoading.set(false);
+        }
     }
 
-    private async processSession(sessionId: string, userContent: string, existingMessageId?: string) {
+    async regenerateLast(): Promise<void> {
+        const providers = this.providerStore.providers();
+        const sessions = this.currentActiveSessions()
+            .filter(session => sessionReadiness(session, providers).ready);
+        if (!sessions.length) return;
+
+        this._isLoading.set(true);
+        const jobs: Promise<void>[] = [];
+
+        try {
+            for (const session of sessions) {
+                let userIndex = -1;
+                for (let i = session.messages.length - 1; i >= 0; i--) {
+                    if (session.messages[i].role === 'user') {
+                        userIndex = i;
+                        break;
+                    }
+                }
+                if (userIndex < 0) continue;
+
+                const userMessage = session.messages[userIndex];
+                this.sessionStore.truncateMessagesFrom(session.id, userIndex);
+                jobs.push(this.processSession(session.id, userMessage.content, { excludeMessageId: userMessage.id }));
+            }
+
+            await Promise.all(jobs);
+        } finally {
+            this._isLoading.set(false);
+        }
+    }
+
+    stopGenerating(): void {
+        for (const session of this.currentActiveSessions()) {
+            this.api.abort(session.id);
+        }
+    }
+
+    cancelAll(): void {
+        this.api.abortAll();
+    }
+
+    private async processSession(sessionId: string, userContent: string, options: ProcessOptions = {}): Promise<void> {
         const config = this.configStore.state();
-        const session = this.sessionStore.sessions().find(s => s.id === sessionId);
+        const session = this.findSession(sessionId);
         if (!session) return;
 
-        const assistantId = existingMessageId || crypto.randomUUID();
         const provider = this.providerStore.providers().find(p => p.id === session.providerId);
-        if (!provider) return;
+        if (!provider) {
+            if (options.existingMessageId) {
+                this.fail(sessionId, options.existingMessageId, {
+                    type: 'invalid_params',
+                    message: 'Proveedor no encontrado.',
+                    retryable: false
+                });
+            }
+            return;
+        }
 
-        if (!existingMessageId) {
+        const assistantId = options.existingMessageId ?? crypto.randomUUID();
+        const isContinuation = options.existingMessageId !== undefined;
+
+        if (isContinuation) {
+            this.sessionStore.updateMessage(sessionId, assistantId, message => ({ ...message, isStreaming: true, error: undefined }));
+        } else {
             this.sessionStore.addMessage(sessionId, {
                 id: assistantId,
                 role: 'assistant',
@@ -139,108 +235,154 @@ export class LlmOrchestratorService {
                 model: session.model,
                 provider: provider.id,
                 isStreaming: true,
-                metrics: { ttft: 0, totalTime: 0 },
+                metrics: { ttft: 0, totalTime: 0 }
             });
         }
 
-        const history = this.historyForRequest(session.messages, existingMessageId);
+        const history = this.historyForRequest(session.messages, options);
         const apiMessages = this.builder.build(userContent, session, config, history);
-        const startTime = performance.now();
+        const estimatedInput = estimateTokens(apiMessages.map(message => message.content).join(' '));
+
+        const started = performance.now();
+        let ttft = 0;
+        let gotFirstToken = false;
 
         try {
             const response = await this.api.send(provider, session, config, apiMessages);
-            const ttft = performance.now() - startTime;
 
             if (!response.ok) {
-                await this.handleHttpError(response, sessionId, assistantId);
+                const error = await this.api.toAppError(response);
+                this.fail(sessionId, assistantId, error, started);
                 return;
             }
 
             if (config.streamMode) {
-                await this.streamReader.readStream(
-                    response,
-                    () => this.stopRequested(),
-                    (chunk) => this.applyChunk(sessionId, assistantId, chunk, ttft)
-                );
+                await this.reader.readStream(response, {
+                    signal: this.api.signalFor(sessionId),
+                    onChunk: chunk => {
+                        if (!gotFirstToken && (chunk.content || chunk.reasoning)) {
+                            ttft = performance.now() - started;
+                            gotFirstToken = true;
+                        }
+                        this.applyChunk(sessionId, assistantId, chunk, ttft);
+                    }
+                });
             } else {
-                const data = await response.json();
+                const data: unknown = await response.json();
                 const content = this.api.extractContent(data);
-                const finishReason = data.choices?.[0]?.finish_reason || data.candidates?.[0]?.finishReason;
-                const usage = data.usage;
+                const usage = this.api.extractUsage(data);
+                const finishReason = this.api.extractFinishReason(data);
+                ttft = performance.now() - started;
+                gotFirstToken = true;
 
-                this.sessionStore.updateMessage(sessionId, assistantId, msg => ({
-                    ...msg,
-                    content: existingMessageId ? msg.content + content : content,
-                    finishReason: finishReason,
+                this.sessionStore.updateMessage(sessionId, assistantId, message => ({
+                    ...message,
+                    content: isContinuation ? (message.content || '') + content : content,
+                    finishReason: finishReason ?? message.finishReason,
                     metrics: {
-                        ...(msg.metrics ?? { ttft: 0, totalTime: 0 }),
-                        ttft: msg.metrics?.ttft || Math.round(ttft),
-                        ...(usage && {
-                            tokensIn: usage.prompt_tokens,
-                            tokensOut: usage.completion_tokens,
-                        }),
-                    },
+                        ...(message.metrics ?? {}),
+                        ttft: message.metrics?.ttft || Math.round(ttft),
+                        tokensIn: usage.tokensIn ?? message.metrics?.tokensIn,
+                        tokensOut: usage.tokensOut ?? message.metrics?.tokensOut
+                    }
                 }));
             }
 
-            const totalTime = performance.now() - startTime;
-            this.sessionStore.updateMessage(sessionId, assistantId, msg => ({
-                ...msg,
-                isStreaming: false,
-                metrics: {
-                    ...msg.metrics,
-                    totalTime: Math.round(totalTime),
-                    ttft: msg.metrics?.ttft || Math.round(ttft),
-                },
-            }));
-
+            if (!gotFirstToken) ttft = performance.now() - started;
+            this.finalize(sessionId, assistantId, started, ttft, estimatedInput, false);
         } catch (error: unknown) {
-            const err = error as Error;
-            if (err.name === 'AbortError') {
-                this.sessionStore.updateMessage(sessionId, assistantId, msg => ({ ...msg, isStreaming: false }));
+            if ((isAppError(error) && error.type === 'aborted') || (error instanceof Error && error.name === 'AbortError')) {
+                this.finalize(sessionId, assistantId, started, ttft, estimatedInput, true);
                 return;
             }
-            this.handleStreamError(sessionId, assistantId, err.message || 'Error desconocido');
+            this.fail(sessionId, assistantId, toAppError(error), started);
+        } finally {
+            this.api.release(sessionId);
+            this.sessionStore.updateMessage(sessionId, assistantId, message =>
+                message.isStreaming ? { ...message, isStreaming: false } : message
+            );
         }
     }
 
-    private historyForRequest(messages: Message[], continueId?: string): Message[] {
-        return messages.filter(m => {
-            if (m.role === 'system' || m.error) return false;
-            if (continueId && m.id === continueId) return !!m.content;
-            return !m.isStreaming;
+    private applyChunk(sessionId: string, messageId: string, chunk: StreamChunk, ttft: number): void {
+        const usage = this.api.usageFromChunk(chunk);
+        this.sessionStore.updateMessage(sessionId, messageId, message => ({
+            ...message,
+            content: (message.content || '') + chunk.content,
+            reasoning: chunk.reasoning ? (message.reasoning || '') + chunk.reasoning : message.reasoning,
+            finishReason: chunk.finishReason ?? message.finishReason,
+            metrics: {
+                ...(message.metrics ?? {}),
+                ttft: message.metrics?.ttft || Math.round(ttft),
+                tokensIn: usage.tokensIn ?? message.metrics?.tokensIn,
+                tokensOut: usage.tokensOut ?? message.metrics?.tokensOut
+            }
+        }));
+    }
+
+    private finalize(
+        sessionId: string,
+        messageId: string,
+        started: number,
+        ttft: number,
+        estimatedInput: number,
+        stopped: boolean
+    ): void {
+        const totalTime = performance.now() - started;
+        this.sessionStore.updateMessage(sessionId, messageId, message => {
+            const metrics = { ...(message.metrics ?? {}) };
+            metrics.totalTime = Math.round(totalTime);
+            if (!metrics.ttft && ttft > 0) metrics.ttft = Math.round(ttft);
+
+            if (metrics.tokensIn == null) {
+                metrics.tokensIn = estimatedInput;
+                metrics.estimated = true;
+            }
+            if (metrics.tokensOut == null) {
+                metrics.tokensOut = estimateTokens(message.content) + estimateTokens(message.reasoning ?? '');
+                metrics.estimated = true;
+            }
+
+            return {
+                ...message,
+                isStreaming: false,
+                finishReason: stopped ? 'stopped' : (message.finishReason ?? 'stop'),
+                metrics
+            };
         });
     }
 
-    private applyChunk(sessionId: string, messageId: string, chunk: StreamChunk, ttft: number) {
-        this.sessionStore.updateMessage(sessionId, messageId, msg => ({
-            ...msg,
-            content: msg.content + chunk.content,
-            reasoning: chunk.reasoning ? (msg.reasoning || '') + chunk.reasoning : msg.reasoning,
-            finishReason: chunk.finish_reason || msg.finishReason,
-            metrics: {
-                ...(msg.metrics ?? { ttft: 0, totalTime: 0 }),
-                ttft: msg.metrics?.ttft || Math.round(ttft),
-                ...(chunk.usage && {
-                    tokensIn: chunk.usage.prompt_tokens,
-                    tokensOut: chunk.usage.completion_tokens,
-                }),
-            },
-        }));
-    }
-
-    private async handleHttpError(response: Response, sessionId: string, messageId: string) {
-        const smartMessage = await this.api.extractSmartError(response);
-        this.handleStreamError(sessionId, messageId, smartMessage);
-    }
-
-    private handleStreamError(sessionId: string, messageId: string, message: string) {
-        this.toast.error(message);
-        this.sessionStore.updateMessage(sessionId, messageId, msg => ({
-            ...msg,
+    private fail(sessionId: string, messageId: string, error: AppError, started?: number): void {
+        this.toast.error(error.message);
+        this.sessionStore.updateMessage(sessionId, messageId, message => ({
+            ...message,
             isStreaming: false,
-            error: message,
-            content: msg.content ? `${msg.content}\n\n${message}` : message,
+            error,
+            finishReason: 'error',
+            metrics: started === undefined
+                ? message.metrics
+                : { ...(message.metrics ?? {}), totalTime: Math.round(performance.now() - started) }
         }));
+    }
+
+    private historyForRequest(messages: Message[], options: ProcessOptions): Message[] {
+        return messages.filter(message => {
+            if (options.excludeMessageId && message.id === options.excludeMessageId) return false;
+            if (message.error) return false;
+            if (options.existingMessageId && message.id === options.existingMessageId) return !!message.content;
+            return !message.isStreaming;
+        });
+    }
+
+    private findSession(sessionId: string): ChatSession | undefined {
+        return this.sessionStore.sessions().find(session => session.id === sessionId);
+    }
+
+    private currentActiveSessions(): ChatSession[] {
+        return activeSessions(
+            this.sessionStore.sessions(),
+            this.configStore.state(),
+            this.providerStore.providers()
+        );
     }
 }

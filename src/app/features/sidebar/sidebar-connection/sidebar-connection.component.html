@@ -1,15 +1,15 @@
 <!-- src/app/features/sidebar/sidebar-connection/sidebar-connection.component.html -->
 
+@if (session(); as current) {
 <div class="space-y-2.5">
 
     <!-- PROVIDER -->
     <div class="field">
         <label class="label-base">Proveedor</label>
-        <select [ngModel]="session().providerId" (ngModelChange)="onProviderChange($event)"
-            class="input-base cursor-pointer">
-            @for (p of providers(); track p.id) {
-            @if (p.id !== 'custom') {
-            <option [value]="p.id">{{ p.name }}</option>
+        <select [ngModel]="current.providerId" (ngModelChange)="onProviderChange($event)" class="input-base cursor-pointer">
+            @for (provider of providers(); track provider.id) {
+            @if (provider.id !== 'custom') {
+            <option [value]="provider.id">{{ provider.name }}</option>
             }
             }
             <option value="custom">Ingresar manualmente</option>
@@ -22,17 +22,21 @@
         <div class="relative">
             <input type="text" [ngModel]="activeProvider()?.apiToken || ''"
                 (ngModelChange)="updateProviderToken($event)" class="input-base pr-9"
-                [style.-webkit-text-security]="showToken() ? 'none' : 'disc'" placeholder="sk-...">
+                [class.text-security-disc]="!showToken()" placeholder="sk-..." autocomplete="off">
             <button type="button" (click)="showToken.set(!showToken())"
-                class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main">
+                class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main"
+                [attr.aria-label]="showToken() ? 'Ocultar token' : 'Mostrar token'">
                 @if (showToken()) { <svg lucideEyeOff class="w-4 h-4"></svg> }
                 @else { <svg lucideEye class="w-4 h-4"></svg> }
             </button>
         </div>
+        @if (!activeProvider()?.apiToken) {
+        <p class="text-[11px] text-warning">Falta el token para este proveedor.</p>
+        }
     </div>
 
     <!-- URL -->
-    @if (session().providerId === 'custom') {
+    @if (current.providerId === 'custom') {
     <div class="field animate-fade-in">
         <label class="label-base">API URL</label>
         <input type="text" [ngModel]="activeProvider()?.apiUrl || ''" (ngModelChange)="updateProviderUrl($event)"
@@ -46,14 +50,35 @@
         <select [(ngModel)]="modelSelectValue" class="input-base cursor-pointer">
             <option value="" disabled>Selecciona un modelo...</option>
             @for (model of availableModels(); track model.id) {
-            <option [value]="model.id">{{ model.name }}</option>
+            <option [value]="model.id">{{ model.label }}</option>
             }
             <option value="manual">Ingresar manualmente</option>
         </select>
 
         @if (modelSelectValue === 'manual') {
-        <input type="text" [ngModel]="session().model" (ngModelChange)="updateSessionModel($event)"
+        <input type="text" [ngModel]="current.model" (ngModelChange)="updateSessionModel($event)"
             class="input-base animate-fade-in" placeholder="mi-modelo-custom">
+
+        <label class="label-base mt-1 block">Límite de tokens</label>
+        <select [ngModel]="tokenOverride()" (ngModelChange)="setTokenOverride($event)" class="input-base cursor-pointer">
+            <option value="">Automático</option>
+            <option value="max_tokens">max_tokens</option>
+            <option value="max_completion_tokens">max_completion_tokens</option>
+        </select>
         }
     </div>
+
+    <!-- CAPABILITIES -->
+    @if (restrictedLabels().length) {
+    <div class="flex items-start gap-1.5 rounded-lg border border-warning/40 bg-warning-bg px-2 py-1.5 text-[11px] text-warning">
+        <svg lucideTriangleAlert class="w-3.5 h-3.5 shrink-0 mt-0.5"></svg>
+        <span>Este modelo no admite {{ restrictedLabels().join(', ') }}. Esos parámetros se omiten al enviar.</span>
+    </div>
+    }
+
+    <!-- MODEL INFO -->
+    @if (priceLabel(); as price) {
+    <p class="text-[11px] text-text-muted">{{ price }}{{ current.tokenLimitOverride ? ' · override manual' : '' }}</p>
+    }
 </div>
+}

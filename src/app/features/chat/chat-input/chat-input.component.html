@@ -5,30 +5,26 @@
 
         <!-- TOOLBAR -->
         <div class="flex items-center justify-between mb-2">
-            <button (click)="showPromptsModal.set(true)"
-                class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1.5 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 shadow-sm">
+            <button (click)="showPromptsModal.set(true)" class="chip">
                 <svg lucideZap class="w-3 h-3 text-primary"></svg>
                 Ejemplos
             </button>
 
             <div class="flex items-center gap-2">
-                <button (click)="regenerateLast()" [disabled]="!canRegenerate()"
-                    class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                <button (click)="regenerateLast()" [disabled]="!canRegenerate()" class="chip disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg lucideRotateCcw class="w-3 h-3 text-primary"></svg> Regenerar
                 </button>
-                <button (click)="clearMessages()" [disabled]="!hasMessages()"
-                    class="px-2.5 py-1 rounded-full border border-border-strong text-xs font-medium text-text-muted transition-all flex items-center gap-1 cursor-pointer hover:text-primary hover:border-primary/50 hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                <button (click)="clearMessages()" [disabled]="!hasMessages()" class="chip disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg lucideTrash class="w-3 h-3 text-primary"></svg> Borrar
                 </button>
             </div>
         </div>
 
-        <!-- INPUT -->
+        <!-- COMPOSER -->
         <div class="relative flex flex-col w-full bg-surface border-2 border-border-base rounded-xl focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent transition-all shadow-sm">
             <div class="flex items-start">
-                
                 <textarea appAutosize [expanded]="isExpanded()" [value]="userInput()"
-                    (input)="onInput($any($event).target.value)" autocomplete="off" (keydown)="onKeydown($event)"
+                    (input)="onInput($event)" autocomplete="off" (keydown)="onKeydown($event)"
                     rows="1" placeholder="Escribe tu mensaje..." [disabled]="isLoading()"
                     class="flex-1 px-4 py-3 bg-transparent border-none focus:outline-none focus:ring-0 resize-none overflow-y-auto disabled:opacity-50 disabled:cursor-not-allowed text-text-main placeholder-text-muted text-sm md:text-[15px] leading-normal"></textarea>
 
@@ -36,40 +32,41 @@
                     @if (isLoading()) {
                     <div class="flex items-center gap-1">
                         <button (click)="stopGenerating()"
-                            class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors shadow-sm cursor-pointer"
-                            title="Detener generación">
+                            class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover text-text-inverse transition-colors shadow-sm cursor-pointer"
+                            title="Detener generación" aria-label="Detener generación">
                             <svg lucideSquare class="w-4 h-4"></svg>
                         </button>
-                        <button (click)="cancelRequest()"
-                            class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors animate-pulse shadow-sm cursor-pointer"
-                            title="Cancelar">
+                        @if (isCompare()) {
+                        <button (click)="cancelAll()"
+                            class="p-1.5 rounded-lg bg-error hover:opacity-90 text-white transition-colors shadow-sm cursor-pointer"
+                            title="Cancelar todas las peticiones" aria-label="Cancelar todas las peticiones">
                             <svg lucideX class="w-4 h-4"></svg>
                         </button>
+                        }
                     </div>
                     } @else {
                     <button (click)="sendMessage()" [disabled]="!userInput().trim()"
                         class="p-1.5 rounded-lg bg-primary hover:bg-primary-hover disabled:bg-surface-hover disabled:text-text-muted text-text-inverse cursor-pointer transition-colors shadow-sm"
-                        title="Enviar">
+                        title="Enviar" aria-label="Enviar mensaje">
                         <svg lucideSendHorizontal class="w-4 h-4"></svg>
                     </button>
                     }
                 </div>
             </div>
 
+            <!-- FOOTER -->
             <div class="flex items-center justify-between px-4 pb-2 pt-0">
                 <span class="text-xs font-medium text-text-muted/70 select-none">
                     @if (userInput().length > 0) {
-                    {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{ contextTokens() }}
-                    tokens
+                    {{ userInput().length }} chars · ~{{ estimatedTokens() }} tokens · contexto: ~{{ contextTokens() }} tokens
                     } @else {
                     Shift+Enter nueva línea · Ctrl+K limpiar
                     }
                 </span>
 
-                <!-- BOTÓN EXPANDIR/CONTRAER -->
                 <button (click)="toggleExpand()"
                     class="p-1 rounded-md text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors cursor-pointer"
-                    [title]="isExpanded() ? 'Minimizar' : 'Maximizar'">
+                    [title]="isExpanded() ? 'Minimizar' : 'Maximizar'" [attr.aria-label]="isExpanded() ? 'Minimizar' : 'Maximizar'">
                     @if (isExpanded()) {
                     <svg lucideMinimize class="w-3.5 h-3.5"></svg>
                     } @else {
@@ -78,7 +75,6 @@
                 </button>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -86,14 +82,13 @@
 @if (showPromptsModal()) {
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
     <div class="absolute inset-0 bg-black/50" (click)="showPromptsModal.set(false)"></div>
-    <div
-        class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in border border-border-base flex flex-col max-h-[80vh]">
+    <div class="relative bg-surface rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in border border-border-base flex flex-col max-h-[80vh]">
         <div class="p-4 border-b border-border-base flex justify-between items-center bg-surface-alt">
             <h3 class="font-semibold text-text-main flex items-center gap-2">
                 <svg lucideZap class="w-4 h-4"></svg>
                 Ejemplos de Prompts
             </h3>
-            <button (click)="showPromptsModal.set(false)"
+            <button (click)="showPromptsModal.set(false)" aria-label="Cerrar ejemplos"
                 class="p-1.5 rounded-lg hover:bg-surface-hover text-text-muted hover:text-text-main transition-colors cursor-pointer">
                 <svg lucideX class="w-4 h-4"></svg>
             </button>

@@ -1,8 +1,8 @@
 // src/app/core/services/metrics.service.ts
 
-import { Injectable } from '@angular/core';
-import { ChatSession, Message, MessageMetrics } from '../../models/chat.models';
-import { MODEL_PRICING } from '../../constants/pricing.constants';
+import { Injectable, inject } from '@angular/core';
+import { ChatSession, Message, MessageMetrics } from '../models';
+import { ModelRegistryService } from '../registry/model-registry.service';
 
 export interface RunStats {
     sessionId: string;
@@ -13,6 +13,7 @@ export interface RunStats {
     totalTime: number | null;
     tokensIn: number | null;
     tokensOut: number | null;
+    estimated: boolean;
     tps: number | null;
     cost: number | null;
     costLabel: string | null;
@@ -24,11 +25,13 @@ export type WinnerCriterion = 'totalTime' | 'ttft' | 'cost' | 'tps';
 @Injectable({ providedIn: 'root' })
 export class MetricsService {
 
+    private registry = inject(ModelRegistryService);
+
     getTPS(metrics?: MessageMetrics | null): number | null {
-        if (!metrics?.tokensOut || !metrics.totalTime || !metrics.ttft) return null;
-        const genTimeSec = (metrics.totalTime - metrics.ttft) / 1000;
-        if (genTimeSec <= 0) return null;
-        return metrics.tokensOut / genTimeSec;
+        if (metrics?.tokensOut == null || metrics.totalTime == null || metrics.ttft == null) return null;
+        const generationMs = metrics.totalTime - metrics.ttft;
+        if (generationMs <= 0) return null;
+        return metrics.tokensOut / (generationMs / 1000);
     }
 
     formatTPS(metrics?: MessageMetrics | null): string | null {
@@ -36,48 +39,48 @@ export class MetricsService {
         return tps === null ? null : tps.toFixed(1);
     }
 
-    getCostValue(metrics?: MessageMetrics | null, model?: string): number | null {
-        if (!metrics?.tokensIn || !metrics.tokensOut || !model) return null;
-        const pricing = MODEL_PRICING[model];
+    getCostValue(metrics?: MessageMetrics | null, providerId?: string, model?: string): number | null {
+        if (metrics?.tokensIn == null || metrics.tokensOut == null || !providerId || !model) return null;
+        const pricing = this.registry.pricing(providerId, model);
         if (!pricing) return null;
-        const total = (metrics.tokensIn / 1_000_000) * pricing.input
+        return (metrics.tokensIn / 1_000_000) * pricing.input
             + (metrics.tokensOut / 1_000_000) * pricing.output;
-        return total === 0 ? null : total;
     }
 
-    formatCost(metrics?: MessageMetrics | null, model?: string): string | null {
-        const total = this.getCostValue(metrics, model);
+    formatCost(metrics?: MessageMetrics | null, providerId?: string, model?: string): string | null {
+        const total = this.getCostValue(metrics, providerId, model);
         if (total === null) return null;
-        if (total < 0.0001) return '< $0.0001';
+        if (total > 0 && total < 0.0001) return '< $0.0001';
         return '$' + total.toFixed(4);
     }
 
     lastValidAssistant(session: ChatSession): Message | null {
         for (let i = session.messages.length - 1; i >= 0; i--) {
-            const m = session.messages[i];
-            if (m.role === 'assistant' && !m.isStreaming) return m;
+            const message = session.messages[i];
+            if (message.role === 'assistant' && !message.isStreaming) return message;
         }
         return null;
     }
 
     statsFor(session: ChatSession): RunStats | null {
-        const msg = this.lastValidAssistant(session);
-        if (!msg) return null;
-        const model = msg.model || session.model;
-        const cost = this.getCostValue(msg.metrics, model);
+        const message = this.lastValidAssistant(session);
+        if (!message) return null;
+        const model = message.model || session.model;
+        const provider = message.provider || session.providerId;
         return {
             sessionId: session.id,
             name: session.name,
             model: model || '—',
-            provider: msg.provider || session.providerId || '—',
-            ttft: msg.metrics?.ttft ?? null,
-            totalTime: msg.metrics?.totalTime ?? null,
-            tokensIn: msg.metrics?.tokensIn ?? null,
-            tokensOut: msg.metrics?.tokensOut ?? null,
-            tps: this.getTPS(msg.metrics),
-            cost,
-            costLabel: this.formatCost(msg.metrics, model),
-            hasError: !!msg.error
+            provider: provider || '—',
+            ttft: message.metrics?.ttft ?? null,
+            totalTime: message.metrics?.totalTime ?? null,
+            tokensIn: message.metrics?.tokensIn ?? null,
+            tokensOut: message.metrics?.tokensOut ?? null,
+            estimated: !!message.metrics?.estimated,
+            tps: this.getTPS(message.metrics),
+            cost: this.getCostValue(message.metrics, provider, model),
+            costLabel: this.formatCost(message.metrics, provider, model),
+            hasError: !!message.error
         };
     }
 
@@ -92,10 +95,10 @@ export class MetricsService {
         return va < vb ? 'a' : 'b';
     }
 
-    private value(s: RunStats, c: WinnerCriterion): number | null {
-        if (c === 'totalTime') return s.totalTime;
-        if (c === 'ttft') return s.ttft;
-        if (c === 'cost') return s.cost;
-        return s.tps;
+    private value(stats: RunStats, criterion: WinnerCriterion): number | null {
+        if (criterion === 'totalTime') return stats.totalTime;
+        if (criterion === 'ttft') return stats.ttft;
+        if (criterion === 'cost') return stats.cost;
+        return stats.tps;
     }
 }

@@ -1,28 +1,26 @@
 <!-- src/app/components/toast/toast.component.html -->
 
 <!-- TOAST STACK -->
-<div
+<div aria-live="polite" aria-atomic="false"
     class="fixed z-200 flex flex-col gap-2 pointer-events-none w-[min(20rem,calc(100%-2rem))] left-1/2 -translate-x-1/2 top-17 md:left-auto md:right-4 md:translate-x-0 md:top-20">
 
     @for (toast of toastService.toasts(); track toast.id) {
-
     <div class="pointer-events-auto flex items-center gap-2.5 px-3 py-2 rounded-lg shadow-lg border text-text-main bg-surface animate-fade-in"
-        [ngClass]="getToastClasses(toast.type)">
+        [class]="toneClasses(toast.type)">
 
         @switch (toast.type) {
         @case ('success') { <svg lucideCheckCheck class="w-3.5 h-3.5 shrink-0"></svg> }
-        @case ('error') { <svg lucideAlertCircle class="w-3.5 h-3.5 shrink-0"></svg> }
-        @case ('warning') { <svg lucideAlertTriangle class="w-3.5 h-3.5 shrink-0"></svg> }
+        @case ('error') { <svg lucideCircleAlert class="w-3.5 h-3.5 shrink-0"></svg> }
+        @case ('warning') { <svg lucideTriangleAlert class="w-3.5 h-3.5 shrink-0"></svg> }
         @case ('info') { <svg lucideInfo class="w-3.5 h-3.5 shrink-0"></svg> }
         }
 
         <span class="text-xs font-medium flex-1 leading-snug">{{ toast.message }}</span>
 
-        <button (click)="toastService.remove(toast.id)"
+        <button (click)="toastService.remove(toast.id)" aria-label="Cerrar notificación"
             class="opacity-50 hover:opacity-100 transition-opacity cursor-pointer shrink-0 p-0.5">
             <svg lucideX class="w-3.5 h-3.5"></svg>
         </button>
     </div>
     }
-
 </div>

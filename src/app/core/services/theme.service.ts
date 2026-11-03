@@ -1,49 +1,44 @@
 // src/app/core/services/theme.service.ts
 
-import { Injectable, signal, effect, inject, PLATFORM_ID, RendererFactory2 } from '@angular/core';
+import { Injectable, PLATFORM_ID, effect, inject, signal } from '@angular/core';
 import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+
+const THEME_KEY = 'theme';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
 
     private document = inject(DOCUMENT);
     private platformId = inject(PLATFORM_ID);
-    private renderer = inject(RendererFactory2).createRenderer(null, null);
 
-    isDark = signal<boolean>(false);
+    readonly isDark = signal(this.getInitialTheme());
 
     constructor() {
-
-        this.isDark.set(this.getInitialTheme());
-
         effect(() => {
             const dark = this.isDark();
+            if (!isPlatformBrowser(this.platformId)) return;
 
-            if (isPlatformBrowser(this.platformId)) {
-                localStorage.setItem('theme', dark ? 'dark' : 'light');
-            }
-
-            if (dark) {
-                this.renderer.addClass(this.document.documentElement, 'dark');
-            } else {
-                this.renderer.removeClass(this.document.documentElement, 'dark');
+            this.document.documentElement.classList.toggle('dark', dark);
+            try {
+                localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light');
+            } catch {
+                // sin persistencia disponible
             }
         });
     }
 
+    toggle(): void {
+        this.isDark.update(value => !value);
+    }
+
     private getInitialTheme(): boolean {
-
-        if (!isPlatformBrowser(this.platformId)) {
-            return true;
+        if (!isPlatformBrowser(this.platformId)) return true;
+        try {
+            const saved = localStorage.getItem(THEME_KEY);
+            if (saved) return saved === 'dark';
+        } catch {
+            // ignorar
         }
-
-        const saved = localStorage.getItem('theme');
-        if (saved) return saved === 'dark';
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
-
-    toggle() {
-        this.isDark.update(v => !v);
-    }
-
 }
