@@ -1,39 +1,49 @@
 // src/app/features/chat/compare-summary/compare-summary.component.ts
 
-import { Component, computed, inject, signal } from '@angular/core';
-import { SessionStore } from '../../../core/stores/session.store';
-import { GlobalConfigStore } from '../../../core/stores/global-config.store';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { LucideX } from '@lucide/angular';
 import { MetricsService, WinnerCriterion } from '../../../core/services/metrics.service';
 import { ClipboardService } from '../../../core/services/clipboard.service';
-import { LucideX } from '@lucide/angular';
+import { ConfigStore } from '../../../core/stores/config.store';
+import { ProviderStore } from '../../../core/stores/provider.store';
+import { SessionStore } from '../../../core/stores/session.store';
+import { activeSessions } from '../../../core/state/session.selectors';
 
 @Component({
     selector: 'app-compare-summary',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [LucideX],
     templateUrl: './compare-summary.component.html'
 })
 export class CompareSummaryComponent {
 
-    private sessions = inject(SessionStore).sessions;
-    private config = inject(GlobalConfigStore).state;
+    private sessionStore = inject(SessionStore);
+    private configStore = inject(ConfigStore);
+    private providerStore = inject(ProviderStore);
     private metrics = inject(MetricsService);
     private clipboard = inject(ClipboardService);
 
-    open = signal(false);
-    criterion = signal<WinnerCriterion>('totalTime');
+    readonly open = signal(false);
+    readonly criterion = signal<WinnerCriterion>('totalTime');
+
+    readonly activeSessions = computed(() => activeSessions(
+        this.sessionStore.sessions(),
+        this.configStore.state(),
+        this.providerStore.providers()
+    ));
 
     readonly visible = computed(() => {
-        if (!this.config().isCompareMode) return false;
-        const [a, b] = this.sessions();
-        if (!a || !b) return false;
-        return !!this.metrics.lastValidAssistant(a) && !!this.metrics.lastValidAssistant(b);
+        if (!this.configStore.state().isCompareMode) return false;
+        const sessions = this.activeSessions();
+        if (sessions.length < 2) return false;
+        return !!this.metrics.lastValidAssistant(sessions[0]) && !!this.metrics.lastValidAssistant(sessions[1]);
     });
 
     readonly pair = computed(() => {
         if (!this.visible()) return null;
-        const [sa, sb] = this.sessions();
-        const a = this.metrics.statsFor(sa);
-        const b = this.metrics.statsFor(sb);
+        const [first, second] = this.activeSessions();
+        const a = this.metrics.statsFor(first);
+        const b = this.metrics.statsFor(second);
         if (!a || !b) return null;
         return { a, b, winner: this.metrics.winner(a, b, this.criterion()) };
     });
@@ -47,39 +57,39 @@ export class CompareSummaryComponent {
 
     readonly criteria: WinnerCriterion[] = ['totalTime', 'ttft', 'cost', 'tps'];
 
-    setCriterion(c: WinnerCriterion) {
-        this.criterion.set(c);
+    setCriterion(criterion: WinnerCriterion): void {
+        this.criterion.set(criterion);
     }
 
-    toggle() {
-        this.open.update(v => !v);
+    toggle(): void {
+        this.open.update(value => !value);
     }
 
-    close() {
+    close(): void {
         this.open.set(false);
     }
 
-    fmtMs(v: number | null): string {
-        return v === null ? '—' : `${Math.round(v)} ms`;
+    fmtMs(value: number | null): string {
+        return value === null ? '—' : `${Math.round(value)} ms`;
     }
 
-    fmtNum(v: number | null): string {
-        return v === null ? '—' : v.toFixed(1);
+    fmtNum(value: number | null): string {
+        return value === null ? '—' : value.toFixed(1);
     }
 
-    async copyTable() {
-        const p = this.pair();
-        if (!p) return;
+    async copyTable(): Promise<void> {
+        const pair = this.pair();
+        if (!pair) return;
         const lines = [
             `Comparación (${this.label[this.criterion()]})`,
-            `${p.a.name} · ${p.a.model}`,
-            `  TTFT ${this.fmtMs(p.a.ttft)} · Total ${this.fmtMs(p.a.totalTime)} · Out ${p.a.tokensOut ?? '—'} · TPS ${this.fmtNum(p.a.tps)} · ${p.a.costLabel ?? '—'}`,
-            `${p.b.name} · ${p.b.model}`,
-            `  TTFT ${this.fmtMs(p.b.ttft)} · Total ${this.fmtMs(p.b.totalTime)} · Out ${p.b.tokensOut ?? '—'} · TPS ${this.fmtNum(p.b.tps)} · ${p.b.costLabel ?? '—'}`,
-            p.winner === 'tie' ? 'Empate en métricas' :
-                p.winner === 'a' ? `Mejor en ${this.label[this.criterion()]}: ${p.a.name}` :
-                    p.winner === 'b' ? `Mejor en ${this.label[this.criterion()]}: ${p.b.name}` :
-                        'Sin datos suficientes'
+            `${pair.a.name} · ${pair.a.model}`,
+            `  TTFT ${this.fmtMs(pair.a.ttft)} · Total ${this.fmtMs(pair.a.totalTime)} · Out ${pair.a.tokensOut ?? '—'} · TPS ${this.fmtNum(pair.a.tps)} · ${pair.a.costLabel ?? '—'}`,
+            `${pair.b.name} · ${pair.b.model}`,
+            `  TTFT ${this.fmtMs(pair.b.ttft)} · Total ${this.fmtMs(pair.b.totalTime)} · Out ${pair.b.tokensOut ?? '—'} · TPS ${this.fmtNum(pair.b.tps)} · ${pair.b.costLabel ?? '—'}`,
+            pair.winner === 'tie' ? 'Empate en métricas'
+                : pair.winner === 'a' ? `Mejor en ${this.label[this.criterion()]}: ${pair.a.name}`
+                    : pair.winner === 'b' ? `Mejor en ${this.label[this.criterion()]}: ${pair.b.name}`
+                        : 'Sin datos suficientes'
         ];
         await this.clipboard.copy(lines.join('\n'), 'Comparación copiada');
     }

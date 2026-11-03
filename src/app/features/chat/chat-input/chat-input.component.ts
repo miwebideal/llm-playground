@@ -1,23 +1,29 @@
 // src/app/features/chat/chat-input/chat-input.component.ts
 
-import { Component, signal, viewChild, afterNextRender, computed, inject, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { LlmOrchestratorService } from '../../../core/services/llm-orchestrator.service';
-import { SessionStore } from '../../../core/stores/session.store';
-import { GlobalConfigStore } from '../../../core/stores/global-config.store';
-import { ToastService } from '../../../core/services/toast.service';
-import { DraftService } from '../../../core/services/draft.service';
-import { QUICK_PROMPTS } from '../../../constants/prompts.constants';
-import { ModalService } from '../../../core/services/modal.service';
-import { estimateTokens, estimateContextTokens } from '../../../utils/token.utils';
+import {
+    ChangeDetectionStrategy, Component, afterNextRender, computed, effect, inject, signal, viewChild
+} from '@angular/core';
 import { TextareaAutosizeDirective } from '../../../directives/textarea-autosize.directive';
-
-import { LucideTrash, LucideRotateCcw, LucideSquare, LucideX, LucideSendHorizontal, LucideZap, LucideMaximize, LucideMinimize } from '@lucide/angular';
+import { QUICK_PROMPTS } from '../../../constants/prompts.constants';
+import { DraftService } from '../../../core/services/draft.service';
+import { LlmOrchestratorService } from '../../../core/services/llm-orchestrator.service';
+import { ModalService } from '../../../core/services/modal.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { ConfigStore } from '../../../core/stores/config.store';
+import { ProviderStore } from '../../../core/stores/provider.store';
+import { SessionStore } from '../../../core/stores/session.store';
+import { activeSessions } from '../../../core/state/session.selectors';
+import { estimateContextTokens, estimateTokens } from '../../../utils/token.utils';
+import {
+    LucideTrash, LucideRotateCcw, LucideSquare, LucideX,
+    LucideSendHorizontal, LucideZap, LucideMaximize, LucideMinimize
+} from '@lucide/angular';
 
 @Component({
     selector: 'app-chat-input',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        CommonModule, TextareaAutosizeDirective,
+        TextareaAutosizeDirective,
         LucideTrash, LucideRotateCcw, LucideSquare, LucideX,
         LucideSendHorizontal, LucideZap, LucideMaximize, LucideMinimize
     ],
@@ -27,7 +33,8 @@ export class ChatInputComponent {
 
     private orchestrator = inject(LlmOrchestratorService);
     private sessionStore = inject(SessionStore);
-    private configStore = inject(GlobalConfigStore);
+    private configStore = inject(ConfigStore);
+    private providerStore = inject(ProviderStore);
     private modalService = inject(ModalService);
     private toast = inject(ToastService);
     private draft = inject(DraftService);
@@ -35,25 +42,38 @@ export class ChatInputComponent {
     private autosize = viewChild(TextareaAutosizeDirective);
 
     readonly userInput = this.draft.text;
-    showPromptsModal = signal(false);
-    isExpanded = signal(false);
+    readonly showPromptsModal = signal(false);
+    readonly isExpanded = signal(false);
 
     readonly isLoading = this.orchestrator.isLoading;
-    readonly canRegenerate = computed(() => this.orchestrator.canRegenerate());
+    readonly canRegenerate = this.orchestrator.canRegenerate;
     readonly quickPrompts = QUICK_PROMPTS;
 
+    readonly activeSessions = computed(() => activeSessions(
+        this.sessionStore.sessions(),
+        this.configStore.state(),
+        this.providerStore.providers()
+    ));
+
+    readonly isCompare = computed(() => this.configStore.state().isCompareMode);
+
     readonly estimatedTokens = computed(() => estimateTokens(this.userInput()));
+
     readonly contextTokens = computed(() => {
-        const firstSession = this.sessionStore.sessions()[0];
-        const history = firstSession?.messages.filter(m => !m.isStreaming && !m.error && m.role !== 'system') || [];
-        return estimateContextTokens(history, '') + this.estimatedTokens();
+        const input = this.estimatedTokens();
+        const sessions = this.activeSessions();
+        if (!sessions.length) return input;
+        return Math.max(...sessions.map(session => {
+            const history = session.messages.filter(message =>
+                !message.isStreaming && !message.error
+            );
+            return estimateContextTokens(history, '');
+        })) + input;
     });
 
-    readonly hasMessages = computed(() => {
-        const all = this.sessionStore.sessions();
-        const active = this.configStore.state().isCompareMode ? all.slice(0, 2) : [all[0]];
-        return active.some(s => s?.messages.length > 0);
-    });
+    readonly hasMessages = computed(() =>
+        this.activeSessions().some(session => session.messages.length > 0)
+    );
 
     constructor() {
         afterNextRender(() => this.autosize()?.fit());
@@ -65,24 +85,30 @@ export class ChatInputComponent {
         });
     }
 
-    onInput(value: string) {
+    onInput(event: Event): void {
+        const value = (event.target as HTMLTextAreaElement).value;
         this.draft.set(value);
         this.autosize()?.fit();
     }
 
-    toggleExpand() {
-        this.isExpanded.update(v => !v);
+    toggleExpand(): void {
+        this.isExpanded.update(value => !value);
     }
 
-    setPrompt(text: string) {
+    setPrompt(text: string): void {
         this.draft.set(text);
         this.showPromptsModal.set(false);
         queueMicrotask(() => this.autosize()?.fit());
     }
 
-    async sendMessage() {
+    async sendMessage(): Promise<void> {
         const text = this.userInput().trim();
         if (!text || this.isLoading()) return;
+
+        if (!this.orchestrator.canSend()) {
+            await this.orchestrator.sendMessage(text);
+            return;
+        }
 
         this.draft.clear();
         this.isExpanded.set(false);
@@ -91,7 +117,7 @@ export class ChatInputComponent {
         await this.orchestrator.sendMessage(text);
     }
 
-    onKeydown(event: KeyboardEvent) {
+    onKeydown(event: KeyboardEvent): void {
         if (event.key === 'k' && event.ctrlKey) {
             event.preventDefault();
             this.draft.clear();
@@ -99,35 +125,28 @@ export class ChatInputComponent {
             this.autosize()?.reset();
             return;
         }
-        if (event.key === 'Enter' && !event.shiftKey) {
+        if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
             event.preventDefault();
-            this.sendMessage();
+            void this.sendMessage();
         }
     }
 
-    async clearMessages() {
-        const isCompare = this.configStore.state().isCompareMode;
+    async clearMessages(): Promise<void> {
+        const ids = this.activeSessions().map(session => session.id);
         const confirmed = await this.modalService.confirm({
-            title: isCompare ? 'Borrar chats' : 'Borrar historial',
+            title: this.isCompare() ? 'Borrar chats visibles' : 'Borrar historial',
             message: '¿Estás seguro de que querés borrar el historial? Esta acción no se puede deshacer.',
             confirmText: 'Sí, borrar',
             cancelText: 'Cancelar',
             isDanger: true
         });
 
-        if (confirmed) {
-            if (isCompare) {
-                this.sessionStore.clearMessages();
-            } else {
-                const first = this.sessionStore.sessions()[0];
-                if (first) this.sessionStore.clearMessages(first.id);
-            }
-            this.toast.info('Historial borrado');
-        }
-
+        if (!confirmed) return;
+        this.sessionStore.clearMessages(ids);
+        this.toast.info('Historial borrado');
     }
 
-    async regenerateLast() {
+    async regenerateLast(): Promise<void> {
         const confirmed = await this.modalService.confirm({
             title: 'Regenerar respuesta',
             message: '¿Estás seguro de que querés regenerar la última respuesta?',
@@ -136,18 +155,16 @@ export class ChatInputComponent {
             isDanger: true
         });
 
-        if (confirmed) {
-            await this.orchestrator.regenerateLast();
-        }
+        if (confirmed) await this.orchestrator.regenerateLast();
     }
 
-    stopGenerating() {
+    stopGenerating(): void {
         this.orchestrator.stopGenerating();
         this.toast.info('Generación detenida');
     }
 
-    cancelRequest() {
-        this.orchestrator.cancel();
-        this.toast.warning('Petición cancelada');
+    cancelAll(): void {
+        this.orchestrator.cancelAll();
+        this.toast.warning('Peticiones canceladas');
     }
 }

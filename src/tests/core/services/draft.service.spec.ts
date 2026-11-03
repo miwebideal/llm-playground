@@ -2,7 +2,8 @@
 
 import { TestBed } from '@angular/core/testing';
 import { DraftService } from '../../../app/core/services/draft.service';
-import { PersistenceService, STORAGE_KEYS } from '../../../app/core/services/persistence.service';
+import { StorageService, STORAGE_KEYS } from '../../../app/core/services/storage.service';
+import { ToastService } from '../../../app/core/services/toast.service';
 
 describe('DraftService', () => {
 
@@ -11,7 +12,7 @@ describe('DraftService', () => {
     function create(): DraftService {
         TestBed.resetTestingModule();
         TestBed.configureTestingModule({
-            providers: [PersistenceService, DraftService]
+            providers: [ToastService, StorageService, DraftService]
         });
         return TestBed.inject(DraftService);
     }
@@ -21,7 +22,7 @@ describe('DraftService', () => {
         expect(create().text()).toBe('');
     });
 
-    it('hidrata un string guardado', () => {
+    it('hidrata un string guardado en formato legado', () => {
         localStorage.setItem(STORAGE_KEYS.draft, JSON.stringify('borrador'));
         expect(create().text()).toBe('borrador');
     });
@@ -33,15 +34,17 @@ describe('DraftService', () => {
         expect(localStorage.getItem(STORAGE_KEYS.draft)).toBeNull();
     });
 
-    it('set persiste y clear borra', async () => {
+    it('set persiste y clear borra sin resucitar', async () => {
         const draft = create();
         draft.set('hola');
         expect(draft.text()).toBe('hola');
-        await new Promise(r => setTimeout(r, 450));
-        expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.draft)!)).toBe('hola');
+        await new Promise(resolve => setTimeout(resolve, 450));
+        const envelope = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft)!);
+        expect(envelope.data).toBe('hola');
 
         draft.clear();
         expect(draft.text()).toBe('');
+        await new Promise(resolve => setTimeout(resolve, 450));
         expect(localStorage.getItem(STORAGE_KEYS.draft)).toBeNull();
     });
 

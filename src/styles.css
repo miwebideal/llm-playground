@@ -56,7 +56,6 @@
 @import './styles/variables.css';
 
 @layer utilities {
-
     .text-security-disc {
         -webkit-text-security: disc;
     }
@@ -69,5 +68,4 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
     }
-
 }

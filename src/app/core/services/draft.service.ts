@@ -1,7 +1,7 @@
 // src/app/core/services/draft.service.ts
 
 import { Injectable, inject, signal } from '@angular/core';
-import { PersistenceService, STORAGE_KEYS } from './persistence.service';
+import { StorageService, STORAGE_KEYS } from './storage.service';
 
 function isDraft(data: unknown): boolean {
     return typeof data === 'string';
@@ -10,26 +10,25 @@ function isDraft(data: unknown): boolean {
 @Injectable({ providedIn: 'root' })
 export class DraftService {
 
-    private persist = inject(PersistenceService);
+    private storage = inject(StorageService);
 
     readonly text = signal('');
 
     constructor() {
-        const saved = this.persist.load<string>(STORAGE_KEYS.draft, isDraft);
-        this.text.set(saved ?? '');
+        this.text.set(this.storage.load<string>(STORAGE_KEYS.draft, isDraft) ?? '');
     }
 
     set(value: string): void {
         this.text.set(value);
         if (!value.trim()) {
-            this.persist.remove(STORAGE_KEYS.draft);
+            this.storage.remove(STORAGE_KEYS.draft);
             return;
         }
-        this.persist.save(STORAGE_KEYS.draft, value, 400);
+        this.storage.save(STORAGE_KEYS.draft, value, 400);
     }
 
     clear(): void {
         this.text.set('');
-        this.persist.remove(STORAGE_KEYS.draft);
+        this.storage.remove(STORAGE_KEYS.draft);
     }
 }

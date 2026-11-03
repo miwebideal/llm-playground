@@ -13,11 +13,13 @@ export interface ModalOptions {
 @Injectable({ providedIn: 'root' })
 export class ModalService {
 
-    isOpen = signal(false);
-    options = signal<ModalOptions | null>(null);
+    readonly isOpen = signal(false);
+    readonly options = signal<ModalOptions | null>(null);
     private resolvePromise: ((value: boolean) => void) | null = null;
 
     confirm(options: ModalOptions): Promise<boolean> {
+        if (this.resolvePromise) this.close(false);
+
         this.options.set({
             confirmText: 'Confirmar',
             cancelText: 'Cancelar',
@@ -26,17 +28,16 @@ export class ModalService {
         });
         this.isOpen.set(true);
 
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
             this.resolvePromise = resolve;
         });
     }
 
-    close(result: boolean) {
+    close(result: boolean): void {
         this.isOpen.set(false);
         if (this.resolvePromise) {
             this.resolvePromise(result);
             this.resolvePromise = null;
         }
     }
-
 }

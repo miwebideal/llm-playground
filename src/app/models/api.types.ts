@@ -14,74 +14,58 @@ export interface ApiPayload {
     max_completion_tokens?: number;
     response_format?: { type: string };
     stream: boolean;
-    stream_options?: {
-        include_usage: boolean;
-    };
+    stream_options?: { include_usage: boolean };
 }
 
-// Respuesta no-streaming (OpenAI format)
+export interface ApiUsage {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+}
+
+export interface ApiChoice {
+    message?: {
+        content?: string;
+        reasoning?: string;
+    };
+    delta?: {
+        content?: string;
+        reasoning?: string;
+        reasoning_content?: string;
+    };
+    finish_reason?: string | null;
+}
+
 export interface ApiResponse {
-    choices: Array<{
-        message: {
-            content: string;
-            role: string;
-        };
-        finish_reason: string | null;
-        index: number;
-    }>;
-    usage?: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
-    };
-    model: string;
-    created: number;
-    id: string;
+    choices?: ApiChoice[];
+    usage?: ApiUsage;
 }
 
-// Respuesta no-streaming (Gemini format)
 export interface GeminiResponse {
-    candidates: Array<{
-        content: {
-            parts: Array<{ text: string }>;
-            role: string;
-        };
-        finishReason: string;
-        index: number;
+    candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+        finishReason?: string;
     }>;
-}
-
-// Chunk de streaming
-export interface StreamDelta {
-    content?: string;
-    reasoning_content?: string;
-    role?: string;
-}
-
-export interface StreamChoice {
-    index: number;
-    delta: StreamDelta;
-    finish_reason: string | null;
+    usageMetadata?: ApiUsage;
 }
 
 export interface StreamChunkRaw {
-    id: string;
-    object: string;
-    created: number;
-    model: string;
-    choices: StreamChoice[];
-    usage?: {
-        prompt_tokens: number;
-        completion_tokens: number;
-        total_tokens: number;
+    choices?: ApiChoice[];
+    usage?: ApiUsage;
+    error?: {
+        message?: string;
+        type?: string;
+        code?: string | number;
     };
 }
 
-// Error de API
 export interface ApiErrorResponse {
     error?: {
-        message: string;
-        type: string;
-        code: string;
+        message?: string;
+        type?: string;
+        code?: string | number;
     };
 }
