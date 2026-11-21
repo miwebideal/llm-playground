@@ -1,0 +1,73 @@
+<!-- src/app/features/pages/keys.page.html -->
+
+<div class="page-inner max-w-3xl">
+    <header>
+        <h1 class="page-title">Claves</h1>
+        <p class="page-sub">
+            Tus keys se cifran con AES-GCM en este navegador y nunca pasan por un servidor nuestro.
+            {{ configured() }} de {{ store.providers().length }} configuradas.
+        </p>
+    </header>
+
+    @if (!canPersist) {
+    <p class="card px-4 py-3 text-sm text-warning-text bg-warning-bg border-transparent">
+        Este navegador no permite cifrar (¿no es https?). Las keys quedan sólo en memoria hasta cerrar la pestaña.
+    </p>
+    }
+
+    <!-- LIST -->
+    <div class="flex flex-col gap-2">
+        @for (provider of store.providers(); track provider.id) {
+        <div class="card px-4 py-3 flex flex-col gap-2.5">
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="w-2 h-2 rounded-full shrink-0"
+                    [class.bg-success]="source(provider) !== 'none'" [class.bg-border-strong]="source(provider) === 'none'"></span>
+                <span class="font-medium text-sm w-28">{{ provider.name }}</span>
+
+                @if (source(provider) === 'browser') {
+                <span class="mono text-xs text-text-muted">{{ mask(provider.apiToken) }}</span>
+                <span class="pill ml-auto"><svg lucideLock class="w-3 h-3"></svg> cifrada</span>
+                } @else {
+                <span class="text-xs text-text-muted">sin key</span>
+                <span class="ml-auto"></span>
+                }
+
+                <span class="flex items-center gap-0.5">
+                    @if (source(provider) !== 'none') {
+                    <button type="button" class="btn-icon" (click)="test(provider)" [disabled]="isTesting(provider.id)" title="Probar conexión" aria-label="Probar conexión">
+                        <svg lucideRefreshCw class="w-3.5 h-3.5" [class.animate-spin]="isTesting(provider.id)"></svg>
+                    </button>
+                    <button type="button" class="btn-icon" (click)="remove(provider)" title="Borrar key" aria-label="Borrar key">
+                        <svg lucideTrash2 class="w-3.5 h-3.5"></svg>
+                    </button>
+                    }
+                    <button type="button" class="link-btn px-2" (click)="startEdit(provider)">
+                        {{ source(provider) === 'browser' ? 'Reemplazar' : 'Agregar' }}
+                    </button>
+                </span>
+            </div>
+
+            @if (provider.id === customId) {
+            <input type="url" class="input-base mono text-xs" [value]="provider.apiUrl" (change)="updateUrl($event)"
+                placeholder="URL del endpoint · ej. http://localhost:11434/v1/chat/completions" aria-label="URL del endpoint personalizado">
+            }
+
+            @if (editing() === provider.id) {
+            <form class="flex gap-2 animate-fade-in" (submit)="$event.preventDefault(); save(provider)">
+                <div class="relative flex-1">
+                    <input [type]="reveal() ? 'text' : 'password'" class="input-base mono text-xs pr-9" [value]="draft()"
+                        (input)="draft.set($any($event.target).value)" placeholder="Pegá la key" autocomplete="off" spellcheck="false"
+                        [attr.aria-label]="'Key de ' + provider.name">
+                    <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main cursor-pointer"
+                        (click)="reveal.set(!reveal())" [attr.aria-label]="reveal() ? 'Ocultar' : 'Mostrar'">
+                        @if (reveal()) { <svg lucideEyeOff class="w-4 h-4"></svg> } @else { <svg lucideEye class="w-4 h-4"></svg> }
+                    </button>
+                </div>
+                <button type="submit" class="btn btn-primary" [disabled]="!draft().trim()">Guardar</button>
+                <button type="button" class="btn btn-ghost" (click)="editing.set(null)">Cancelar</button>
+            </form>
+            }
+        </div>
+        }
+    </div>
+</div>

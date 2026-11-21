@@ -63,6 +63,7 @@ export class StreamReaderService {
         return rest;
     }
 
+    /** Timeout por inactividad; se cancela si el usuario aborta. */
     private readWithTimeout(
         reader: ReadableStreamDefaultReader<Uint8Array>,
         signal: AbortSignal | undefined,

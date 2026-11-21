@@ -1,74 +1,103 @@
-/* src/styles/variables.css */
+/* src/styles/variables.css
+ * Claro cálido (papel) y oscuro grafito. Todo el color sale de acá.
+ * `primary` es la tinta (negro/blanco); `accent` (naranja) queda para acciones principales.
+ */
 
 :root {
-    --bg-base: #f4f4f5;
+    --bg-base: #efebe4;
+    --bg-rail: #fbfaf7;
     --bg-surface: #ffffff;
-    --bg-surface-hover: #f4f4f5;
-    --bg-surface-alt: #ececee;
+    --bg-surface-alt: #f4f1ea;
+    --bg-surface-hover: #ebe6dc;
 
-    --border-base: #e4e4e7;
-    --border-strong: #d4d4d8;
+    --border-base: #e5e0d7;
+    --border-strong: #d3ccbe;
 
-    --text-main: #18181b;
-    --text-muted: #71717a;
-    --text-inverse: #fafafa;
+    --text-main: #1c1a17;
+    --text-muted: #7d776b;
+    --text-inverse: #ffffff;
 
-    --primary: #6d28d9;
-    --primary-hover: #5b21b6;
-    --primary-bg: #f5f3ff;
-    --primary-text: #5b21b6;
+    --primary: #1c1a17;
+    --primary-hover: #34312b;
+    --primary-bg: #f4f1ea;
+    --primary-text: #1c1a17;
 
-    --success: #3f3f46;
-    --success-bg: #f4f4f5;
-    --success-text: #3f3f46;
+    --accent: #e8590c;
+    --accent-hover: #cc4d09;
+    --accent-bg: #fdeee4;
 
-    --error: #dc2626;
-    --error-bg: #fef2f2;
-    --error-text: #991b1b;
+    --model-a: #7f77dd;
+    --model-a-bg: #eeedfe;
+    --model-a-text: #3c3489;
+    --model-b: #d85a30;
+    --model-b-bg: #faece7;
+    --model-b-text: #712b13;
 
-    --warning: #a1a1aa;
-    --warning-bg: #f4f4f5;
-    --warning-text: #52525b;
+    --success: #0f6e56;
+    --success-bg: #e1f5ee;
+    --success-text: #085041;
 
-    --info: #3f3f46;
-    --info-bg: #f4f4f5;
-    --info-text: #3f3f46;
+    --error: #c0392b;
+    --error-bg: #fcebeb;
+    --error-text: #791f1f;
 
-    --font-base: 'Geist', system-ui, -apple-system, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    --warning: #a15c07;
+    --warning-bg: #faeeda;
+    --warning-text: #633806;
+
+    --info: #185fa5;
+    --info-bg: #e6f1fb;
+    --info-text: #0c447c;
+
+    --rail-w: 60px;
+    --rail-w-open: 220px;
+    color-scheme: light;
 }
 
 .dark {
-    --bg-base: #09090b;
-    --bg-surface: #18181b;
-    --bg-surface-hover: #27272a;
-    --bg-surface-alt: #141416;
+    --bg-base: #0f1012;
+    --bg-rail: #141518;
+    --bg-surface: #18191d;
+    --bg-surface-alt: #1f2025;
+    --bg-surface-hover: #27292f;
 
-    --border-base: #27272a;
-    --border-strong: #3f3f46;
+    --border-base: #26282e;
+    --border-strong: #363840;
 
-    --text-main: #f4f4f5;
-    --text-muted: #a1a1aa;
-    --text-inverse: #fafafa;
+    --text-main: #e8e8ea;
+    --text-muted: #8b8d96;
+    --text-inverse: #111214;
 
-    --primary: #8b5cf6;
-    --primary-hover: #7c3aed;
-    --primary-bg: rgba(139, 92, 246, 0.14);
-    --primary-text: #c4b5fd;
+    --primary: #e8e8ea;
+    --primary-hover: #ffffff;
+    --primary-bg: #1f2025;
+    --primary-text: #e8e8ea;
 
-    --success: #a1a1aa;
-    --success-bg: #27272a;
-    --success-text: #d4d4d8;
+    --accent: #ff7a33;
+    --accent-hover: #ff8f52;
+    --accent-bg: rgba(255, 122, 51, 0.14);
+
+    --model-a: #afa9ec;
+    --model-a-bg: rgba(175, 169, 236, 0.12);
+    --model-a-text: #cecbf6;
+    --model-b: #f0997b;
+    --model-b-bg: rgba(240, 153, 123, 0.12);
+    --model-b-text: #f5c4b3;
+
+    --success: #5dcaa5;
+    --success-bg: rgba(93, 202, 165, 0.12);
+    --success-text: #9fe1cb;
 
     --error: #f87171;
     --error-bg: rgba(248, 113, 113, 0.12);
     --error-text: #fca5a5;
 
-    --warning: #a1a1aa;
-    --warning-bg: #27272a;
-    --warning-text: #d4d4d8;
+    --warning: #f5b74e;
+    --warning-bg: rgba(245, 183, 78, 0.12);
+    --warning-text: #fac775;
 
-    --info: #a1a1aa;
-    --info-bg: #27272a;
-    --info-text: #d4d4d8;
+    --info: #85b7eb;
+    --info-bg: rgba(133, 183, 235, 0.12);
+    --info-text: #b5d4f4;
+    color-scheme: dark;
 }

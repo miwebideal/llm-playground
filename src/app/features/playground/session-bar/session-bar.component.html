@@ -1,0 +1,40 @@
+<!-- src/app/features/playground/session-bar/session-bar.component.html -->
+
+<div class="border-b border-border-base">
+    <div class="flex items-center gap-x-4 gap-y-1 flex-wrap px-3.5 py-2 mono text-[11px] text-text-muted">
+        <span>sesión <b class="font-medium text-text-main">{{ fmtCost(runLog.sessionTotals().cost) }}</b></span>
+        <span>{{ runLog.sessionTotals().runs }} runs</span>
+        <span>{{ fmtTokens(runLog.sessionTotals().tokens) }} tok</span>
+        @if (fastest(); as fast) {
+        <span>más rápido <b class="font-medium text-success">{{ fast.label }}</b></span>
+        }
+        @if (lanes().length) {
+        <button type="button" (click)="open.set(!open())" [attr.aria-expanded]="open()"
+            class="ml-auto inline-flex items-center gap-1 font-sans text-xs text-text-main hover:underline underline-offset-2 cursor-pointer">
+            {{ open() ? 'Ocultar' : 'Resumen' }}
+            <svg lucideChevronDown class="w-3.5 h-3.5 transition-transform" [class.rotate-180]="open()"></svg>
+        </button>
+        }
+    </div>
+
+    @if (open() && lanes().length) {
+    <div class="px-3.5 pb-3 pt-1 flex flex-col gap-2 animate-fade-in">
+        <div class="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_auto] gap-x-3 gap-y-2 items-center text-xs">
+            @for (lane of lanes(); track lane.sessionId) {
+            <span class="truncate flex items-center gap-2">
+                <span class="w-2 h-2 rounded-sm shrink-0" [style.background]="lane.color"></span>{{ lane.label }}
+            </span>
+            <div class="bar-track" role="img" [attr.aria-label]="'Primer token ' + fmtMs(lane.ttft) + ', total ' + fmtMs(lane.totalTime)">
+                <div class="absolute inset-y-0 rounded" [style.left.%]="lane.offset" [style.width.%]="lane.width" [style.background]="lane.color"></div>
+            </div>
+            <span class="mono text-[11px] text-text-muted whitespace-nowrap">{{ fmtMs(lane.totalTime) }} · {{ lane.tps?.toFixed(0) ?? '—' }} t/s · {{ lane.costLabel ?? '—' }}</span>
+            }
+        </div>
+        <div class="flex flex-wrap items-center gap-3 text-[11px] text-text-muted">
+            <span>Cada barra arranca en el primer token y termina con la respuesta completa.</span>
+            @if (cheapest(); as cheap) { <span class="pill pill-success">más barato: {{ cheap.label }}</span> }
+            <button type="button" class="chip ml-auto" (click)="copy()"><svg lucideCopy class="w-3 h-3"></svg> Copiar</button>
+        </div>
+    </div>
+    }
+</div>

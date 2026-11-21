@@ -5,6 +5,7 @@ import { ProviderConfig } from '../models';
 import { CUSTOM_PROVIDER_ID, PROVIDER_PRESETS } from '../../constants/providers.constants';
 import { SecretStoreService } from '../services/secret-store.service';
 import { StorageService, STORAGE_KEYS } from '../services/storage.service';
+import { ToastService } from '../services/toast.service';
 
 function defaultProviders(): ProviderConfig[] {
     const list: ProviderConfig[] = PROVIDER_PRESETS.map(preset => ({
@@ -27,11 +28,24 @@ function isProviders(data: unknown): boolean {
     });
 }
 
+/** Agrega presets nuevos y actualiza URLs/nombres de presets existentes. */
+function mergeWithPresets(saved: ProviderConfig[]): ProviderConfig[] {
+    const byId = new Map(saved.map(p => [p.id, p]));
+    return defaultProviders().map(base => {
+        const existing = byId.get(base.id);
+        if (!existing) return base;
+        return base.isCustom
+            ? { ...base, apiUrl: existing.apiUrl, apiToken: existing.apiToken }
+            : { ...base, apiToken: existing.apiToken };
+    });
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProviderStore {
 
     private storage = inject(StorageService);
     private secrets = inject(SecretStoreService);
+    private toast = inject(ToastService);
 
     private readonly _providers = signal<ProviderConfig[]>([]);
     readonly providers = this._providers.asReadonly();
@@ -56,7 +70,7 @@ export class ProviderStore {
             ...provider,
             apiToken: provider.apiToken ? await this.secrets.decrypt(provider.apiToken) : ''
         })));
-        this._providers.set(hydrated);
+        this._providers.set(mergeWithPresets(hydrated));
         this.isLoaded.set(true);
     }
 
@@ -64,6 +78,11 @@ export class ProviderStore {
         this._providers.update(providers =>
             providers.map(provider => provider.id === id ? { ...provider, ...partial } : provider)
         );
+        this.scheduleSave();
+    }
+
+    clearAllTokens(): void {
+        this._providers.update(providers => providers.map(p => ({ ...p, apiToken: '' })));
         this.scheduleSave();
     }
 
@@ -76,7 +95,11 @@ export class ProviderStore {
         }, 600);
     }
 
+    /** Cifra y persiste; la generación evita que un guardado viejo pise uno nuevo. */
     private async save(generation: number): Promise<void> {
+        if (!this.secrets.canPersist() && this._providers().some(p => p.apiToken)) {
+            this.toast.warning('Este navegador no permite cifrar: las keys quedan sólo en memoria hasta cerrar la pestaña.');
+        }
         const snapshot = await Promise.all(this._providers().map(async provider => ({
             ...provider,
             apiToken: provider.apiToken ? await this.secrets.encrypt(provider.apiToken) : ''

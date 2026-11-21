@@ -1,15 +1,13 @@
 // src/app/components/modal/modal.component.ts
 
-import {
-    ChangeDetectionStrategy, Component, ElementRef, HostListener, effect, inject, viewChild
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, HostListener, effect, inject, viewChild } from '@angular/core';
 import { ModalService } from '../../core/services/modal.service';
-import { LucideTriangleAlert } from '@lucide/angular';
+import { LucideTriangleExclamationPoint } from '@lucide/angular';
 
 @Component({
     selector: 'app-modal',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [LucideTriangleAlert],
+    imports: [LucideTriangleExclamationPoint],
     templateUrl: './modal.component.html'
 })
 export class ModalComponent {

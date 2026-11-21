@@ -1,0 +1,98 @@
+<!-- src/app/features/pages/usage.page.html -->
+
+<div class="page-inner">
+    <header class="flex flex-wrap items-end gap-3">
+        <div>
+            <h1 class="page-title">Uso</h1>
+            <p class="page-sub">Gasto, tokens y velocidad reales de tus corridas. Se calcula con lo que devuelve cada proveedor.</p>
+        </div>
+        @if (log.records().length) {
+        <button type="button" class="btn ml-auto" (click)="clear()">Borrar historial</button>
+        }
+    </header>
+
+    @if (!log.records().length) {
+    <div class="card p-10 text-center flex flex-col items-center gap-2">
+        <p class="font-medium">Todavía no hay corridas</p>
+        <p class="text-sm text-text-muted">Cada respuesta que recibas en el playground suma acá: costo, tokens, TTFT y tokens por segundo.</p>
+    </div>
+    } @else {
+
+    <div class="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <div class="kpi"><span class="kpi-label">Gasto total</span><span class="kpi-value mono">{{ fmtCost(log.allTotals().cost) }}</span></div>
+        <div class="kpi"><span class="kpi-label">Corridas</span><span class="kpi-value">{{ log.allTotals().runs }}</span></div>
+        <div class="kpi"><span class="kpi-label">Tokens</span><span class="kpi-value">{{ fmtTokens(log.allTotals().tokens) }}</span></div>
+        <div class="kpi"><span class="kpi-label">Velocidad media</span><span class="kpi-value">{{ log.allTotals().avgTps?.toFixed(0) ?? '—' }}<span class="text-sm font-normal text-text-muted"> t/s</span></span></div>
+    </div>
+
+    <!-- DAILY SPEND -->
+    <section class="card p-4 flex flex-col gap-3">
+        <h2 class="panel-title">Gasto diario · últimos 14 días</h2>
+        <div class="flex items-end gap-1.5 h-32" role="img" aria-label="Gráfico de gasto diario">
+            @for (day of daily(); track day.key) {
+            <div class="flex-1 h-full flex flex-col justify-end items-center group relative">
+                <div class="w-full rounded-t bg-primary/80 group-hover:bg-accent transition-colors" [style.height.%]="day.height"></div>
+                <span class="absolute bottom-full mb-1 hidden group-hover:block whitespace-nowrap mono text-[10px] bg-primary text-text-inverse rounded px-1.5 py-0.5 z-10">
+                    {{ day.label }} · {{ fmtCost(day.cost) }} · {{ day.runs }} runs
+                </span>
+            </div>
+            }
+        </div>
+        <div class="flex justify-between mono text-[10px] text-text-muted">
+            <span>{{ daily()[0].label }}</span><span>hoy</span>
+        </div>
+    </section>
+
+    <!-- BY MODEL -->
+    <section class="card overflow-hidden">
+        <h2 class="panel-title px-4 pt-4 pb-2">Por modelo</h2>
+        <div class="overflow-x-auto">
+            <table class="table-base">
+                <thead><tr><th>Modelo</th><th>Runs</th><th>Primer token</th><th class="w-48">Velocidad</th><th>Tokens</th><th class="text-right">Gasto</th></tr></thead>
+                <tbody>
+                    @for (row of log.byModel(); track row.key) {
+                    <tr>
+                        <td><span class="font-medium">{{ label(row.provider, row.model) }}</span><span class="text-xs text-text-muted ml-1.5">{{ providerName(row.provider) }}</span>
+                            @if (row.errors) { <span class="pill pill-warning ml-1">{{ row.errors }} errores</span> }</td>
+                        <td class="mono">{{ row.runs }}</td>
+                        <td class="mono">{{ fmtMs(row.avgTtft) }}</td>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div class="bar-track h-1.5 flex-1"><div class="absolute inset-y-0 left-0 bg-primary rounded" [style.width.%]="((row.avgTps ?? 0) / maxTps()) * 100"></div></div>
+                                <span class="mono text-xs w-14 text-right">{{ row.avgTps?.toFixed(0) ?? '—' }} t/s</span>
+                            </div>
+                        </td>
+                        <td class="mono">{{ fmtTokens(row.tokens) }}</td>
+                        <td class="mono text-right">{{ fmtCost(row.cost) }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- RECENT -->
+    <section class="card overflow-hidden">
+        <h2 class="panel-title px-4 pt-4 pb-2">Últimas corridas</h2>
+        <div class="overflow-x-auto">
+            <table class="table-base">
+                <thead><tr><th>Cuándo</th><th>Modelo</th><th>TTFT</th><th>Total</th><th>t/s</th><th>Tokens</th><th class="text-right">Costo</th></tr></thead>
+                <tbody>
+                    @for (r of recent(); track $index) {
+                    <tr [class.text-text-muted]="r.error">
+                        <td class="mono text-xs whitespace-nowrap">{{ time(r.at) }}</td>
+                        <td class="whitespace-nowrap">{{ label(r.provider, r.model) }} @if (r.error) { <span class="pill pill-warning ml-1">error</span> }</td>
+                        <td class="mono text-xs">{{ fmtMs(r.ttft) }}</td>
+                        <td class="mono text-xs">{{ fmtMs(r.totalTime) }}</td>
+                        <td class="mono text-xs">{{ r.tps?.toFixed(0) ?? '—' }}</td>
+                        <td class="mono text-xs">{{ (r.tokensIn ?? 0) + (r.tokensOut ?? 0) }}{{ r.estimated ? '~' : '' }}</td>
+                        <td class="mono text-xs text-right">{{ fmtCost(r.cost) }}</td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <p class="text-xs text-text-muted">~ = tokens estimados porque el proveedor no devolvió el uso. Sin precio en el catálogo, el costo queda en “—”.</p>
+    }
+</div>

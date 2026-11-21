@@ -1,0 +1,35 @@
+<!-- src/app/features/pages/about.page.html -->
+
+<div class="page-inner max-w-3xl">
+
+    <section class="card p-6 md:p-8 flex flex-col md:flex-row gap-6 items-start">
+        <span class="w-16 h-16 shrink-0 rounded-2xl bg-surface-alt border border-border-base flex items-center justify-center">
+            <img src="miwebideal.png" alt="Logo de MiWebIdeal" class="w-9 h-9 dark:invert" width="36" height="36">
+        </span>
+        <div class="flex flex-col gap-3">
+            <p class="text-xs text-text-muted">Un proyecto de <a [href]="siteUrl" target="_blank" rel="noopener noreferrer" class="text-text-main font-medium hover:underline">MiWebIdeal</a></p>
+            <h1 class="text-2xl md:text-3xl font-semibold tracking-tight">Devolver a la comunidad lo que aprendimos</h1>
+            <p class="text-text-muted leading-relaxed">
+                Este proyecto nació de lo que aprendimos en foros, repos abiertos y personas que se tomaron el tiempo de explicar.
+                Es nuestra forma de aportar a esa misma comunidad: una herramienta simple para probar y comparar modelos,
+                ver métricas reales y trabajar sin que los datos pasen por servidores intermediarios.
+            </p>
+            <div class="flex flex-wrap gap-2 pt-1">
+                <a [href]="repoUrl" target="_blank" rel="noopener noreferrer" class="btn btn-primary"><app-github-icon></app-github-icon> Ver el código</a>
+                <a [href]="siteUrl" target="_blank" rel="noopener noreferrer" class="btn">miwebideal.com.ar <svg lucideExternalLink class="w-3.5 h-3.5"></svg></a>
+            </div>
+        </div>
+    </section>
+
+    <section class="card p-5 flex gap-3 items-start">
+        <svg lucideShieldCheck class="w-5 h-5 text-success shrink-0 mt-0.5"></svg>
+        <div class="text-sm text-text-muted leading-relaxed">
+            <p class="text-text-main font-medium mb-1">Cómo se guardan tus keys</p>
+            <p>En el navegador se cifran con AES-GCM usando una clave no exportable guardada en IndexedDB. Eso evita lecturas casuales,
+            pero no protege ante XSS o alguien con acceso a tu perfil del navegador. Las requests van directo al proveedor:
+            <a routerLink="/claves" class="text-text-main underline underline-offset-2">ver Claves</a>.</p>
+        </div>
+    </section>
+
+    <p class="text-xs text-text-muted">¿Encontraste un bug o tenés una propuesta? Abrí un issue en el repositorio o escribinos desde la web.</p>
+</div>

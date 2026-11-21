@@ -7,3 +7,10 @@ export interface ProviderConfig {
     apiToken: string;
     isCustom?: boolean;
 }
+
+export type KeySource = 'browser' | 'none';
+
+export function keySource(provider: ProviderConfig | undefined): KeySource {
+    if (!provider) return 'none';
+    return provider.apiToken ? 'browser' : 'none';
+}

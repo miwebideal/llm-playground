@@ -8,6 +8,9 @@ export const STORAGE_KEYS = {
     sessions: 'llm-sessions',
     providers: 'llm-providers',
     draft: 'llm-draft',
+    remoteModels: 'llm-remote-models',
+    runLog: 'llm-run-log',
+    ui: 'llm-ui',
 } as const;
 
 const SCHEMA_VERSION = 1;

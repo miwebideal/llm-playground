@@ -1,0 +1,20 @@
+<!-- src/app/features/playground/chat/chat-layout/chat-layout.component.html -->
+
+@if (columns().length > 1) {
+<div class="lg:hidden segmented self-start mb-2" role="tablist">
+    @for (session of columns(); track session.id; let i = $index) {
+    <button type="button" role="tab" [class.on]="activeMobileTab() === i" [attr.aria-selected]="activeMobileTab() === i"
+        (click)="activeMobileTab.set(i)">
+        <span class="w-2 h-2 rounded-sm" [style.background]="i === 0 ? 'var(--model-a)' : 'var(--model-b)'"></span>
+        {{ label(i) }}
+    </button>
+    }
+</div>
+}
+
+<div class="flex-1 min-h-0 grid gap-3" [class.lg:grid-cols-2]="columns().length > 1">
+    @for (session of columns(); track session.id; let i = $index) {
+    <app-chat-column class="min-h-0 min-w-0" [class.max-lg:hidden]="columns().length > 1 && activeMobileTab() !== i"
+        [session]="session" [index]="i"></app-chat-column>
+    }
+</div>

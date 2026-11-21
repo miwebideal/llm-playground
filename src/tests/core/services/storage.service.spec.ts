@@ -1,4 +1,4 @@
-// src/tests/core/services/persistence.service.spec.ts
+// src/tests/core/services/storage.service.spec.ts
 
 import { TestBed } from '@angular/core/testing';
 import { StorageService, STORAGE_KEYS } from '../../../app/core/services/storage.service';

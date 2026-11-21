@@ -38,6 +38,8 @@ interface CatalogOptions {
     pricing?: [number, number];
     contextWindow?: number;
     maxOutput?: number;
+    params?: ModelDefinition['params'];
+    legacy?: boolean;
 }
 
 function model(
@@ -54,6 +56,8 @@ function model(
         capabilities,
         contextWindow: options.contextWindow,
         maxOutput: options.maxOutput,
+        params: options.params,
+        legacy: options.legacy,
         pricing: options.pricing ? price(...options.pricing) : undefined
     };
 }
@@ -67,12 +71,13 @@ export const MODEL_CATALOG: ModelDefinition[] = [
     model('openai', 'gpt-5.4-mini', 'GPT-5.4 Mini', COMPLETION, { pricing: [0.75, 4.5] }),
     model('openai', 'gpt-5.4-nano', 'GPT-5.4 Nano', COMPLETION, { pricing: [0.2, 1.25] }),
     model('openai', 'gpt-5-nano', 'GPT-5 Nano', COMPLETION, { pricing: [0.05, 0.4] }),
-    model('openai', 'gpt-4.1-mini', 'GPT-4.1 Mini', FULL, { pricing: [0.4, 1.6] }),
-    model('openai', 'gpt-4.1-nano', 'GPT-4.1 Nano', FULL, { pricing: [0.1, 0.4] }),
-    model('openai', 'gpt-4o', 'GPT-4o', FULL, { pricing: [2.5, 10] }),
-    model('openai', 'gpt-4o-mini', 'GPT-4o Mini', FULL, { pricing: [0.15, 0.6] }),
+    model('openai', 'gpt-4.1-mini', 'GPT-4.1 Mini', FULL, { pricing: [0.4, 1.6], legacy: true }),
+    model('openai', 'gpt-4.1-nano', 'GPT-4.1 Nano', FULL, { pricing: [0.1, 0.4], legacy: true }),
+    model('openai', 'gpt-4o', 'GPT-4o', FULL, { pricing: [2.5, 10], legacy: true }),
+    model('openai', 'gpt-4o-mini', 'GPT-4o Mini', FULL, { pricing: [0.15, 0.6], legacy: true }),
 
     // DEEPINFRA
+    model('deepinfra', 'deepseek-ai/DeepSeek-V4.1-Flash-1017', 'DeepSeek V4.1 Flash 1017', REASONING, { pricing: [0.098, 0.294], contextWindow: 1_000_000 }),
     model('deepinfra', 'deepseek-ai/DeepSeek-V4.1-Flash', 'DeepSeek V4.1 Flash', REASONING, { pricing: [0.3, 1.2] }),
     model('deepinfra', 'zai-org/GLM-5.3', 'GLM 5.3', REASONING, { pricing: [0.9, 3] }),
     model('deepinfra', 'zai-org/GLM-5.3-Flash', 'GLM 5.3 Flash', REASONING, { pricing: [0.075, 0.25] }),
@@ -94,6 +99,7 @@ export const MODEL_CATALOG: ModelDefinition[] = [
     model('groq', 'openai/gpt-oss-20b', 'GPT-OSS (20B)', REASONING, { pricing: [0.075, 0.3] }),
 
     // FIREWORKS AI
+    model('fireworks', 'accounts/fireworks/models/deepseek-v4p1-flash-1017', 'DeepSeek V4.1 Flash 1017', REASONING, { pricing: [0.3, 1.2], contextWindow: 1_000_000 }),
     model('fireworks', 'accounts/fireworks/models/deepseek-v4p1-flash', 'DeepSeek V4.1 Flash', REASONING, { pricing: [0.22, 0.66] }),
     model('fireworks', 'accounts/fireworks/models/glm-5p3', 'GLM 5.3', REASONING, { pricing: [1.4, 4.4] }),
     model('fireworks', 'accounts/fireworks/models/glm-5p3-flash', 'GLM 5.3 Flash', REASONING, { pricing: [0.15, 0.5] }),
@@ -105,19 +111,16 @@ export const MODEL_CATALOG: ModelDefinition[] = [
     model('fireworks', 'accounts/fireworks/models/gpt-oss-120b', 'GPT-OSS (120B)', REASONING, { pricing: [0.15, 0.6] }),
     model('fireworks', 'accounts/fireworks/models/qwen3p7-plus', 'Qwen 3.7 Plus', REASONING, { pricing: [0.4, 1.6] }),
 
-    // GEMINI
-    model('gemini', 'gemini-1.5-pro', 'Gemini 1.5 Pro', FULL, { pricing: [1.25, 5] }),
-    model('gemini', 'gemini-1.5-flash', 'Gemini 1.5 Flash', FULL, { pricing: [0.35, 1.05] }),
-    model('gemini', 'gemini-1.5-flash-8b', 'Gemini 1.5 Flash 8B', FULL, { pricing: [0.2, 0.8] }),
+    // GEMINI (endpoint compatible con OpenAI). Los IDs exactos se confirman con /models.
+    model('gemini', 'gemini-3.8-flash', 'Gemini 3.8 Flash', FULL, { pricing: [0.75, 3.75] }),
+    model('gemini', 'gemini-3.1-flash-lite', 'Gemini 3.1 Flash-Lite', FULL, { pricing: [0.25, 1.5] }),
 
     // OPENROUTER
-    model('openrouter', 'deepseek/deepseek-coder', 'DeepSeek Coder', FULL, { pricing: [0.14, 0.28] }),
-    model('openrouter', 'qwen/qwen-2-72b-instruct', 'Qwen 2 (72B)', FULL, { pricing: [1.2, 1.2] }),
-    model('openrouter', 'anthropic/claude-3.5-sonnet', 'Claude 3.5 Sonnet', FULL, { pricing: [3, 15] }),
-    model('openrouter', 'openai/gpt-4o', 'GPT-4o', FULL, { pricing: [2.5, 10] }),
+    model('openrouter', 'anthropic/claude-opus-5', 'Claude Opus 5', REASONING, { pricing: [5, 25], contextWindow: 1_000_000 }),
+    model('openrouter', 'anthropic/claude-sonnet-5', 'Claude Sonnet 5', REASONING, { pricing: [2, 10], contextWindow: 1_000_000 }),
+    model('openrouter', 'openai/gpt-oss-120b', 'GPT-OSS (120B)', REASONING, { pricing: [0.15, 0.6] }),
 
     // TOGETHER AI
-    model('together', 'Qwen/Qwen2-72B-Instruct', 'Qwen 2 (72B)', FULL, { pricing: [1.2, 1.2] }),
-    model('together', 'deepseek-ai/deepseek-coder-33b-instruct', 'DeepSeek Coder (33B)', FULL, { pricing: [0.2, 0.2] }),
-    model('together', 'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', 'Llama 3.1 (70B) Turbo', FULL, { pricing: [1.04, 1.04] }),
+    model('together', 'openai/gpt-oss-120b', 'GPT-OSS (120B)', REASONING, { pricing: [0.15, 0.6] }),
+    model('together', 'moonshotai/Kimi-K3', 'Kimi K3', REASONING, { pricing: [3, 15] }),
 ];
