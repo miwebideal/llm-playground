@@ -1,0 +1,40 @@
+<!-- src/app/features/pages/settings.page.html -->
+
+<div class="page-inner max-w-2xl">
+    <header>
+        <h1 class="page-title">Ajustes</h1>
+        <p class="page-sub">Preferencias generales. Los parámetros de cada modelo se ajustan desde el playground.</p>
+    </header>
+
+    <section class="card divide-y divide-border-base">
+        <div class="px-4 py-3.5 flex items-center justify-between gap-4">
+            <div><p class="text-sm font-medium">Tema</p><p class="text-xs text-text-muted">Claro cálido u oscuro grafito.</p></div>
+            <div class="segmented">
+                <button type="button" [class.on]="!theme.isDark()" (click)="theme.isDark.set(false)">Claro</button>
+                <button type="button" [class.on]="theme.isDark()" (click)="theme.isDark.set(true)">Oscuro</button>
+            </div>
+        </div>
+        <label class="px-4 py-3.5 row-toggle">
+            <div><p class="text-sm font-medium">Streaming por defecto</p><p class="text-xs text-text-muted">Necesario para medir el primer token real (TTFT).</p></div>
+            <app-toggle [checked]="config().streamMode" (checkedChange)="set('streamMode', $event)"></app-toggle>
+        </label>
+        <label class="px-4 py-3.5 row-toggle">
+            <div><p class="text-sm font-medium">Mandar historial</p><p class="text-xs text-text-muted">Si está apagado, cada mensaje se envía sin contexto previo.</p></div>
+            <app-toggle [checked]="config().includeHistory" (checkedChange)="set('includeHistory', $event)"></app-toggle>
+        </label>
+        <label class="px-4 py-3.5 row-toggle">
+            <div><p class="text-sm font-medium">Incluir razonamiento al exportar</p><p class="text-xs text-text-muted">Agrega el "pensamiento" de los modelos de razonamiento.</p></div>
+            <app-toggle [checked]="config().includeReasoningExport" (checkedChange)="set('includeReasoningExport', $event)"></app-toggle>
+        </label>
+    </section>
+
+    <section class="flex flex-col gap-2">
+        <h2 class="panel-title">Tus datos</h2>
+        <p class="text-xs text-text-muted">Todo vive en este navegador. Nada pasa por un servidor nuestro.</p>
+        <div class="card divide-y divide-border-base">
+            <div class="px-4 py-3 flex items-center justify-between gap-4"><span class="text-sm">Chats</span><button class="btn" (click)="clearChats()">Borrar</button></div>
+            <div class="px-4 py-3 flex items-center justify-between gap-4"><span class="text-sm">Historial de uso</span><button class="btn" (click)="clearUsage()">Borrar</button></div>
+            <div class="px-4 py-3 flex items-center justify-between gap-4"><span class="text-sm">Keys guardadas</span><button class="btn text-error" (click)="clearKeys()">Borrar</button></div>
+        </div>
+    </section>
+</div>

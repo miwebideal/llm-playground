@@ -1,7 +1,7 @@
 // src/app/core/services/stream-parser.service.ts
 
 import { Injectable } from '@angular/core';
-import { ApiUsage, StreamChunkRaw } from '../../models/api.types';
+import { ApiUsage, StreamChunkRaw } from '../models';
 import { AppError } from '../models';
 import { mapStreamError } from './api-error.mapper';
 

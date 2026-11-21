@@ -26,7 +26,7 @@ export const DEFAULT_SESSION_SETTINGS = {
     systemPrompt: 'You are a helpful assistant.'
 } as const;
 
-export function createSession(id: string, name: string, providerId = 'openai', model = 'gpt-4o-mini'): ChatSession {
+export function createSession(id: string, name: string, providerId = 'openai', model = 'gpt-5.4-mini'): ChatSession {
     return {
         id,
         name,

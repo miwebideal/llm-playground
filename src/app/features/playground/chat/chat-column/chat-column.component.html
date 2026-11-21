@@ -1,0 +1,41 @@
+<!-- src/app/features/playground/chat/chat-column/chat-column.component.html -->
+
+<section class="card h-full flex flex-col min-w-0 relative overflow-hidden" [attr.aria-label]="'Chat con ' + label()">
+
+    <!-- HEADER -->
+    <button type="button" (click)="openSettings()"
+        class="flex items-center gap-2 px-3.5 py-2.5 border-b border-border-base text-left hover:bg-surface-alt transition-colors cursor-pointer shrink-0">
+        <span class="w-2 h-2 rounded-sm shrink-0" [style.background]="color()"></span>
+        <span class="text-sm font-medium truncate">{{ label() }}</span>
+        <span class="text-xs text-text-muted truncate">{{ providerLabel() }}</span>
+        @if (!ready().ready) { <span class="pill pill-warning">{{ ready().reason }}</span> }
+        <svg lucideChevronDown class="w-4 h-4 ml-auto text-text-muted shrink-0"></svg>
+    </button>
+
+    <!-- MESSAGES -->
+    <div #messagesContainer class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4">
+        @if (session().messages.length === 0) {
+        <div class="h-full flex flex-col items-center justify-center text-center gap-3 px-6">
+            <span class="w-11 h-11 rounded-2xl bg-surface-alt flex items-center justify-center text-text-muted">
+                <svg lucideMessageSquare class="w-5 h-5"></svg>
+            </span>
+            <div>
+                <p class="font-medium">Probá {{ label() }}</p>
+                <p class="text-sm text-text-muted mt-0.5">Mandá un mensaje y vas a ver latencia, velocidad y costo real.</p>
+            </div>
+        </div>
+        }
+
+        @for (message of session().messages; track message.id) {
+        <app-chat-message [msg]="message" (onDelete)="deleteMessage($event)"
+            (onContinue)="continueMessage($event)" (onRetry)="retryMessage($event)"></app-chat-message>
+        }
+    </div>
+
+    @if (!pinnedToBottom() && session().messages.length > 0) {
+    <button type="button" (click)="scrollToBottom()" aria-label="Ir al final"
+        class="absolute bottom-3 left-1/2 -translate-x-1/2 btn shadow-md rounded-full text-xs">
+        <svg lucideArrowDown class="w-3.5 h-3.5"></svg> Ir al final
+    </button>
+    }
+</section>

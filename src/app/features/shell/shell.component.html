@@ -1,0 +1,82 @@
+<!-- src/app/features/shell/shell.component.html -->
+
+<div class="h-full flex bg-background text-text-main">
+
+    <!-- RAIL -->
+    <div class="hidden md:block relative shrink-0 transition-[width] duration-200"
+        [style.width]="pinned() ? 'var(--rail-w-open)' : 'var(--rail-w)'">
+        <nav aria-label="Principal" (mouseenter)="hovered.set(true)" (mouseleave)="hovered.set(false)"
+            class="absolute inset-y-0 left-0 z-40 flex flex-col gap-1 bg-rail border-r border-border-base px-2.5 py-3 overflow-hidden transition-[width,box-shadow] duration-200"
+            [class.shadow-xl]="expanded() && !pinned()"
+            [style.width]="expanded() ? 'var(--rail-w-open)' : 'var(--rail-w)'">
+
+            <a routerLink="/" class="flex items-center gap-2.5 pb-4 whitespace-nowrap" aria-label="LLM Playground by MiWebIdeal">
+                <app-brand-mark></app-brand-mark>
+                <span class="leading-tight transition-opacity" [class.opacity-0]="!expanded()">
+                    <span class="block font-semibold tracking-tight">LLM Playground</span>
+                    <span class="block text-[11px] text-text-muted">by <span class="text-text-main font-medium">MiWebIdeal</span></span>
+                </span>
+            </a>
+
+            @for (item of nav; track item.path) {
+            <a [routerLink]="item.path" routerLinkActive="bg-surface-alt! text-text-main!"
+                [routerLinkActiveOptions]="{ exact: item.path === '/' }" [attr.aria-label]="item.label"
+                class="flex items-center gap-3 h-10 px-2.5 rounded-xl text-sm text-text-muted hover:text-text-main hover:bg-surface-alt transition-colors whitespace-nowrap">
+                <app-nav-icon [icon]="item.icon"></app-nav-icon>
+                <span class="transition-opacity" [class.opacity-0]="!expanded()">{{ item.label }}</span>
+            </a>
+            }
+
+            <div class="mt-auto flex flex-col gap-1">
+                <button type="button" (click)="theme.toggle()" [attr.aria-label]="theme.isDark() ? 'Tema claro' : 'Tema oscuro'"
+                    class="flex items-center gap-3 h-10 px-2.5 rounded-xl text-sm text-text-muted hover:text-text-main hover:bg-surface-alt transition-colors whitespace-nowrap cursor-pointer">
+                    @if (theme.isDark()) { <svg lucideSun class="w-4.5 h-4.5 shrink-0"></svg> }
+                    @else { <svg lucideMoon class="w-4.5 h-4.5 shrink-0"></svg> }
+                    <span class="transition-opacity" [class.opacity-0]="!expanded()">{{ theme.isDark() ? 'Tema claro' : 'Tema oscuro' }}</span>
+                </button>
+                <button type="button" (click)="togglePin()" [attr.aria-label]="pinned() ? 'Desfijar menú' : 'Fijar menú'"
+                    class="flex items-center gap-3 h-10 px-2.5 rounded-xl text-sm text-text-muted hover:text-text-main hover:bg-surface-alt transition-colors whitespace-nowrap cursor-pointer">
+                    @if (pinned()) { <svg lucidePinOff class="w-4.5 h-4.5 shrink-0"></svg> }
+                    @else { <svg lucidePin class="w-4.5 h-4.5 shrink-0"></svg> }
+                    <span class="transition-opacity" [class.opacity-0]="!expanded()">{{ pinned() ? 'Desfijar menú' : 'Fijar menú' }}</span>
+                </button>
+
+                <!-- BRAND -->
+                <div class="mt-2 pt-3 border-t border-border-base flex items-center gap-3 px-0.5 whitespace-nowrap">
+                    <a routerLink="/acerca" aria-label="Acerca de: un proyecto de MiWebIdeal"
+                        class="w-9 h-9 shrink-0 rounded-[10px] bg-surface border border-border-base flex items-center justify-center hover:border-border-strong transition-colors">
+                        <img src="miwebideal.png" alt="" class="w-5 h-5 dark:invert" width="20" height="20">
+                    </a>
+                    <a routerLink="/acerca" class="leading-tight transition-opacity min-w-0" [class.opacity-0]="!expanded()">
+                        <span class="block text-[11px] text-text-muted">Un proyecto de</span>
+                        <span class="block text-sm font-medium">MiWebIdeal</span>
+                    </a>
+                    <a [href]="repoUrl" target="_blank" rel="noopener noreferrer" aria-label="Código en GitHub"
+                        class="ml-auto btn-icon transition-opacity" [class.opacity-0]="!expanded()" [class.pointer-events-none]="!expanded()">
+                        <app-github-icon></app-github-icon>
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- CONTENT -->
+    <main class="flex-1 min-w-0 flex flex-col pb-14 md:pb-0">
+        <router-outlet></router-outlet>
+    </main>
+
+    <!-- BOTTOM BAR (MOBILE) -->
+    <nav aria-label="Principal" class="md:hidden fixed bottom-0 inset-x-0 z-40 h-14 bg-rail border-t border-border-base flex items-stretch">
+        @for (item of nav; track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="text-text-main!" [routerLinkActiveOptions]="{ exact: item.path === '/' }"
+            class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] text-text-muted">
+            <app-nav-icon [icon]="item.icon"></app-nav-icon>
+            {{ item.label }}
+        </a>
+        }
+        <a routerLink="/acerca" routerLinkActive="text-text-main!" class="flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] text-text-muted">
+            <img src="miwebideal.png" alt="" class="w-4.5 h-4.5 dark:invert" width="18" height="18">
+            Acerca
+        </a>
+    </nav>
+</div>

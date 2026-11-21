@@ -1,4 +1,4 @@
-// src/app/services/toast.service.ts
+// src/app/core/services/toast.service.ts
 
 import { Injectable, signal, OnDestroy } from '@angular/core';
 

@@ -85,6 +85,7 @@ export class ExportService {
         }));
     }
 
+    /** Resumen de ganadores por métrica para el modo comparación. */
     private comparison(sessions: ChatSession[], config: GlobalConfig) {
         if (!config.isCompareMode || sessions.length < 2) return null;
         const a = this.metrics.statsFor(sessions[0]);
@@ -108,6 +109,7 @@ export class ExportService {
         };
     }
 
+    /** Markdown legible con métricas y razonamiento opcional. */
     private generateMarkdown(sessions: ChatSession[], config: GlobalConfig, includeReasoning: boolean): string {
         let markdown = `# LLM Playground Export\n\n`;
         markdown += `**Fecha:** ${new Date().toLocaleString('es-AR')}\n\n`;

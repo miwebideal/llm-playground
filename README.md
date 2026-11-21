@@ -9,49 +9,43 @@ Como desarrollador, cada vez que salía un modelo nuevo o quería comparar respu
 
 Así nació LLM Playground. Una herramienta hecha por devs para devs, para que te enfoques en lo divertido: **probar modelos**.
 
-## 🛡️ Privacidad Primero (BYOK - Bring Your Own Key)
-**Tus datos son tuyos.** 
-Esta es una Single Page Application (SPA) 100% frontend. 
-- 📉 **Cero Telemetría:** No hay rastreadores, analíticas ni scripts de terceros.
-- 🚫 **Sin Backend Intermediario:** Las peticiones a las APIs de IA se hacen directamente desde tu navegador al proveedor.
-- 💾 **Almacenamiento Local:** Tu API Key, configuración y el historial de chat se guardan exclusivamente en tu navegador. El token se cifra con AES-GCM usando una clave local no exportable (IndexedDB). Esto evita lecturas casuales, pero **no protege contra XSS ni contra acceso al perfil del navegador**.
+## 🛡️ Privacidad primero (BYOK)
+**Tus datos son tuyos.** Es una SPA 100% frontend:
+- 📉 **Cero telemetría:** sin rastreadores, analíticas ni scripts de terceros (las fuentes también son locales).
+- 🚫 **Sin backend intermediario:** las requests van directo de tu navegador al proveedor.
+- 🔐 **Keys cifradas:** en el navegador se guardan con AES-GCM usando una clave local no exportable (IndexedDB). Evita lecturas casuales, pero **no protege contra XSS ni contra acceso a tu perfil del navegador**. Si el navegador no puede cifrar, las keys quedan sólo en memoria.
 
-## ✨ Características Principales
-- **Soporte Multi-Proveedor:** Compatible con cualquier API que use el estándar de OpenAI (Fireworks, DeepInfra, Groq, Together, OpenRouter, Gemini, etc.).
-- **Modo Comparación:** Evaluá dos modelos o proveedores distintos simultáneamente, lado a lado, con el mismo prompt.
-- **Métricas y Costos:** Cálculo en tiempo real de TPS (Tokens por segundo), TTFT, tiempo total y costo estimado en USD según el modelo.
-- **Soporte para Modelos de Razonamiento:** Captura el "proceso de pensamiento" en un acordeón colapsable y permite desactivar parámetros incompatibles (Temp, System Prompt) con un clic.
-- **Exportación Flexible:** Descargá tus conversaciones en formato JSON, Markdown (.md) o copialas directamente al portapapeles.
-- **Markdown & Code Highlighting:** Renderizado perfecto de tablas, listas y bloques de código con botón de "Copiar" integrado.
-- **Dark/Light Mode:** Tema adaptable y persistente.
+## ✨ Características
+- **Playground con chat a todo el ancho** y panel de ajustes lateral (proveedor, modelo, parámetros, system prompt).
+- **Modo dividido:** dos modelos lado a lado con el mismo prompt, parámetros sincronizables y una "carrera de tokens" que muestra primer token y duración.
+- **Métricas reales en cada respuesta:** TTFT, tokens/s, tokens y costo, con detalle desplegable (tokens in/out, tiempo de generación, motivo de corte).
+- **Modelos verificados:** consulta `/models` de cada proveedor, marca los que ya no existen y descubre los nuevos. Catálogo con precio, contexto, parámetros y capacidades.
+- **Uso:** gasto, tokens, velocidad y TTFT promedio por modelo, gasto diario y últimas corridas.
+- **Claves:** cargalas a mano y se cifran al instante en tu navegador.
+- **Multi-proveedor:** OpenAI, DeepInfra, Fireworks, Gemini, OpenRouter, Groq, Together o cualquier endpoint compatible con OpenAI (incluido Ollama / LM Studio en localhost).
+- **Exportación** a Markdown, JSON o portapapeles. Tema claro cálido y oscuro grafito.
 
-## 🛠️ Stack Tecnológico
-- **Framework:** Angular (Signals, Standalone Components, Control Flow)
-- **Estilos:** Tailwind CSS v4
-- **Iconos:** Lucide Angular v1
-- **Markdown:** Marked.js
+## 🛠️ Stack
+- **Framework:** Angular 21 (Signals, Standalone, Router, Control Flow)
+- **Estilos:** Tailwind CSS v4 · Geist / Geist Mono (self-hosted)
+- **Íconos:** Lucide · **Markdown:** Marked + sanitizado por allowlist
+- **Tests:** Vitest
 
-## 🚀 Instalación Local
+## 🚀 Instalación local
 
-Si querés correr el proyecto en tu propia máquina o hacerle un fork:
-
-1. Cloná el repositorio:
 ```bash
 git clone https://github.com/miwebideal/llm-playground.git
-```
-
-2. Instalá las dependencias:
-```bash
 cd llm-playground
 npm install
+npm start
 ```
 
-3. Levantá el servidor de desarrollo:
+Abrí `http://localhost:4200`.
+
+### Tests
 ```bash
-ng serve
+npm test
 ```
-
-4. Abrí tu navegador en `http://localhost:4200`
 
 ## 🤝 Contribuir
 ¡Los Pull Requests son bienvenidos! Si encontrás un bug o tenés una idea para mejorar la herramienta, no dudes en abrir un issue.

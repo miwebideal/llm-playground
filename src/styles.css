@@ -7,10 +7,19 @@
 
 @theme {
 
+    --font-sans: 'Geist Variable', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
+
+
     --color-background: var(--bg-base);
     --color-surface: var(--bg-surface);
     --color-surface-hover: var(--bg-surface-hover);
     --color-surface-alt: var(--bg-surface-alt);
+    --color-rail: var(--bg-rail);
+
+    --color-accent: var(--accent);
+    --color-accent-hover: var(--accent-hover);
+    --color-accent-bg: var(--accent-bg);
 
     --color-text-main: var(--text-main);
     --color-text-muted: var(--text-muted);

@@ -13,8 +13,8 @@ import {
 import { StorageService, STORAGE_KEYS } from '../services/storage.service';
 
 const DEFAULT_SESSIONS: ChatSession[] = [
-    { id: 'session-a', name: 'Modelo A', providerId: 'openai', model: 'gpt-4o-mini', messages: [], ...DEFAULT_SESSION_SETTINGS },
-    { id: 'session-b', name: 'Modelo B', providerId: 'openai', model: 'gpt-4o-mini', messages: [], ...DEFAULT_SESSION_SETTINGS }
+    { id: 'session-a', name: 'Modelo A', providerId: 'openai', model: 'gpt-5.4-mini', messages: [], ...DEFAULT_SESSION_SETTINGS },
+    { id: 'session-b', name: 'Modelo B', providerId: 'openai', model: 'gpt-5.4-mini', messages: [], ...DEFAULT_SESSION_SETTINGS }
 ];
 
 function isSessions(data: unknown): boolean {

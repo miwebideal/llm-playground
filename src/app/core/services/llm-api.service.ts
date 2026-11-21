@@ -2,10 +2,11 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ChatSession, GlobalConfig, ProviderConfig, AppError } from '../models';
-import { ApiMessage, ApiPayload, ApiResponse, ApiErrorResponse, GeminiResponse } from '../../models/api.types';
+import { ApiMessage, ApiPayload, ApiResponse, ApiErrorResponse } from '../models';
 import { ModelRegistryService } from '../registry/model-registry.service';
 import { mapHttpError } from './api-error.mapper';
 import { StreamChunk } from './stream-parser.service';
+import { providerEndpoint, providerHeaders } from './provider-endpoint';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return !!value && typeof value === 'object';
@@ -26,12 +27,9 @@ export class LlmApiService {
         const controller = new AbortController();
         this.controllers.set(session.id, controller);
 
-        return fetch(provider.apiUrl, {
+        return fetch(providerEndpoint(provider, 'chat/completions'), {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${provider.apiToken}`,
-            },
+            headers: providerHeaders(provider),
             body: JSON.stringify(this.buildPayload(session, config, messages)),
             signal: controller.signal,
         });
@@ -105,35 +103,30 @@ export class LlmApiService {
         if (!isRecord(data)) return '';
         const choices = (data as ApiResponse).choices;
         const content = choices?.[0]?.message?.content;
-        if (typeof content === 'string' && content) return content;
-
-        const candidates = (data as GeminiResponse).candidates;
-        const text = candidates?.[0]?.content?.parts?.[0]?.text;
-        return typeof text === 'string' ? text : '';
+        return typeof content === 'string' ? content : '';
     }
 
     extractUsage(data: unknown): { tokensIn?: number; tokensOut?: number } {
         if (!isRecord(data)) return {};
-        const usage = (data as ApiResponse).usage ?? (data as GeminiResponse).usageMetadata;
+        const usage = (data as ApiResponse).usage;
         if (!usage) return {};
         return {
-            tokensIn: usage.prompt_tokens ?? usage.promptTokenCount,
-            tokensOut: usage.completion_tokens ?? usage.candidatesTokenCount
+            tokensIn: usage.prompt_tokens,
+            tokensOut: usage.completion_tokens
         };
     }
 
     extractFinishReason(data: unknown): string | undefined {
         if (!isRecord(data)) return undefined;
         const choices = (data as ApiResponse).choices;
-        const candidates = (data as GeminiResponse).candidates;
-        return choices?.[0]?.finish_reason ?? candidates?.[0]?.finishReason ?? undefined;
+        return choices?.[0]?.finish_reason ?? undefined;
     }
 
     usageFromChunk(chunk: StreamChunk): { tokensIn?: number; tokensOut?: number } {
         if (!chunk.usage) return {};
         return {
-            tokensIn: chunk.usage.prompt_tokens ?? chunk.usage.promptTokenCount,
-            tokensOut: chunk.usage.completion_tokens ?? chunk.usage.candidatesTokenCount
+            tokensIn: chunk.usage.prompt_tokens,
+            tokensOut: chunk.usage.completion_tokens
         };
     }
 }

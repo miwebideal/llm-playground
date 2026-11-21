@@ -1,0 +1,71 @@
+<!-- src/app/features/playground/chat/chat-input/chat-input.component.html -->
+
+<div class="card overflow-hidden">
+
+    <app-session-bar></app-session-bar>
+
+    <textarea appAutosize [expanded]="isExpanded()" [value]="userInput()" (input)="onInput($event)"
+        (keydown)="onKeydown($event)" rows="1" autocomplete="off" aria-label="Mensaje"
+        [placeholder]="isCompare() ? 'Escribí tu mensaje… se envía a ambos modelos' : 'Escribí tu mensaje…'"
+        [disabled]="isLoading()"
+        class="block w-full px-4 pt-3 pb-1 bg-transparent border-none focus:outline-none resize-none overflow-y-auto disabled:opacity-50 text-text-main placeholder:text-text-muted text-[15px] leading-normal"></textarea>
+
+    <div class="flex items-center gap-1 px-2.5 pb-2.5 pt-1">
+        <button type="button" (click)="showPromptsModal.set(true)" class="btn-icon" title="Ejemplos" aria-label="Prompts de ejemplo">
+            <svg lucideZap class="w-4 h-4"></svg>
+        </button>
+        <button type="button" (click)="regenerateLast()" [disabled]="!canRegenerate() || isLoading()" class="btn-icon" title="Regenerar" aria-label="Regenerar última respuesta">
+            <svg lucideRotateCcw class="w-4 h-4"></svg>
+        </button>
+        <button type="button" (click)="clearMessages()" [disabled]="!hasMessages() || isLoading()" class="btn-icon" title="Limpiar chat" aria-label="Limpiar chat">
+            <svg lucideEraser class="w-4 h-4"></svg>
+        </button>
+        <button type="button" (click)="toggleExpand()" class="btn-icon" [title]="isExpanded() ? 'Achicar' : 'Agrandar'" [attr.aria-label]="isExpanded() ? 'Achicar' : 'Agrandar'">
+            @if (isExpanded()) { <svg lucideMinimize class="w-4 h-4"></svg> } @else { <svg lucideMaximize class="w-4 h-4"></svg> }
+        </button>
+
+        <span class="ml-2 mono text-[11px] text-text-muted truncate hidden sm:inline">
+            @if (userInput().length > 0) { ~{{ estimatedTokens() }} tok · contexto ~{{ contextTokens() }} }
+            @else { Enter envía · Shift+Enter nueva línea }
+        </span>
+
+        <span class="ml-auto flex items-center gap-1.5">
+            @if (isLoading()) {
+            @if (isCompare()) {
+            <button type="button" (click)="cancelAll()" class="btn text-xs" aria-label="Cancelar todas las peticiones">
+                <svg lucideX class="w-3.5 h-3.5"></svg> Cancelar todo
+            </button>
+            }
+            <button type="button" (click)="stopGenerating()" class="w-9 h-9 rounded-full bg-primary text-text-inverse flex items-center justify-center cursor-pointer hover:bg-primary-hover" aria-label="Detener">
+                <svg lucideSquare class="w-3.5 h-3.5" fill="currentColor"></svg>
+            </button>
+            } @else {
+            <button type="button" (click)="sendMessage()" [disabled]="!userInput().trim()" aria-label="Enviar"
+                class="send-btn">
+                <svg lucideArrowUp class="w-4 h-4"></svg>
+            </button>
+            }
+        </span>
+    </div>
+</div>
+
+<!-- EXAMPLES -->
+@if (showPromptsModal()) {
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" role="dialog" aria-modal="true" aria-label="Prompts de ejemplo">
+    <div class="absolute inset-0 bg-black/40" (click)="showPromptsModal.set(false)"></div>
+    <div class="relative card shadow-2xl w-full max-w-2xl overflow-hidden animate-scale-in flex flex-col max-h-[80vh]">
+        <div class="px-5 py-4 border-b border-border-base flex justify-between items-center">
+            <h3 class="font-semibold flex items-center gap-2"><svg lucideZap class="w-4 h-4"></svg> Prompts de ejemplo</h3>
+            <button (click)="showPromptsModal.set(false)" aria-label="Cerrar" class="btn-icon"><svg lucideX class="w-4 h-4"></svg></button>
+        </div>
+        <div class="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            @for (prompt of quickPrompts; track prompt.title) {
+            <button (click)="setPrompt(prompt.text)" class="text-left p-3.5 rounded-xl border border-border-base hover:border-border-strong hover:bg-surface-alt transition-colors cursor-pointer">
+                <h4 class="text-sm font-medium mb-1">{{ prompt.title }}</h4>
+                <p class="text-xs text-text-muted line-clamp-2">{{ prompt.text }}</p>
+            </button>
+            }
+        </div>
+    </div>
+</div>
+}

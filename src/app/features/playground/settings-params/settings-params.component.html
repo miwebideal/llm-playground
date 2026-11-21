@@ -1,0 +1,47 @@
+<!-- src/app/features/playground/settings-params/settings-params.component.html -->
+
+@if (session(); as current) {
+<div class="flex flex-col gap-3.5">
+
+    <div class="flex items-center justify-between">
+        <label class="row-toggle">
+            <span class="panel-title">Parámetros</span>
+            <app-toggle [checked]="current.useParams" (checkedChange)="update('useParams', $event)"></app-toggle>
+        </label>
+        <button type="button" (click)="reset()" class="chip"><svg lucideRotateCcw class="w-3 h-3"></svg> Reset</button>
+    </div>
+
+    @if (current.useParams) {
+    <div class="flex flex-col gap-3.5 animate-fade-in">
+        <div class="field" [class.opacity-50]="!capabilities()?.temperature">
+            <div class="flex justify-between label-base"><label for="p-temp">Temperature</label><span class="mono text-text-main">{{ current.temperature }}</span></div>
+            <input id="p-temp" type="range" class="range" min="0" max="2" step="0.1" [value]="current.temperature"
+                (input)="onNumber('temperature', $event)" [disabled]="!capabilities()?.temperature">
+        </div>
+
+        <div class="field" [class.opacity-50]="!capabilities()?.topP">
+            <div class="flex justify-between label-base"><label for="p-topp">Top-P</label><span class="mono text-text-main">{{ current.topP }}</span></div>
+            <input id="p-topp" type="range" class="range" min="0" max="1" step="0.05" [value]="current.topP"
+                (input)="onNumber('topP', $event)" [disabled]="!capabilities()?.topP">
+        </div>
+
+        <div class="flex items-center justify-between gap-3">
+            <label class="label-base" for="p-max">{{ tokenLabel() }}</label>
+            <input id="p-max" type="number" min="1" step="256" [value]="current.maxTokens" (input)="onNumber('maxTokens', $event)"
+                class="input-base mono text-xs text-right w-24 py-1" [disabled]="capabilities()?.tokenLimit === 'none'">
+        </div>
+
+        <label class="row-toggle" [class.opacity-50]="!capabilities()?.jsonMode">
+            <span class="label-base">Respuesta JSON</span>
+            <app-toggle [checked]="current.jsonMode" [disabled]="!capabilities()?.jsonMode" (checkedChange)="update('jsonMode', $event)"></app-toggle>
+        </label>
+
+        <div class="field">
+            <label class="label-base" for="p-system">System prompt</label>
+            <textarea id="p-system" [value]="current.systemPrompt" (input)="onSystemPrompt($event)" rows="4"
+                class="input-base resize-y min-h-20 max-h-[40vh] text-[13px]" [disabled]="!capabilities()?.systemPrompt"></textarea>
+        </div>
+    </div>
+    }
+</div>
+}

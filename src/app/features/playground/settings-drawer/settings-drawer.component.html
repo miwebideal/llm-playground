@@ -1,0 +1,49 @@
+<!-- src/app/features/playground/settings-drawer/settings-drawer.component.html -->
+
+<aside class="h-full w-full flex flex-col bg-rail border-l border-border-base" aria-label="Ajustes del chat">
+    <div class="flex items-center px-4 h-12 border-b border-border-base shrink-0">
+        <h2 class="panel-title">Ajustes</h2>
+        <button type="button" (click)="close()" class="btn-icon ml-auto" aria-label="Cerrar ajustes"><svg lucideX class="w-4 h-4"></svg></button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-5">
+
+        @if (columns().length > 1) {
+        <div class="flex flex-col gap-2.5">
+            <div class="segmented w-full" role="tablist">
+                @for (session of columns(); track session.id; let i = $index) {
+                <button type="button" role="tab" class="flex-1 justify-center min-w-0" [class.on]="activeId() === session.id"
+                    [attr.aria-selected]="activeId() === session.id" (click)="select(session.id)">
+                    <span class="w-2 h-2 rounded-sm shrink-0" [style.background]="i === 0 ? 'var(--model-a)' : 'var(--model-b)'"></span>
+                    <span class="truncate">{{ tabLabel(i) }}</span>
+                </button>
+                }
+            </div>
+            <label class="row-toggle">
+                <span class="text-xs text-text-muted">Sincronizar parámetros entre A y B</span>
+                <app-toggle [checked]="ui.state().syncParams" (checkedChange)="ui.set('syncParams', $event)"></app-toggle>
+            </label>
+        </div>
+        }
+
+        @if (activeId()) {
+        <app-settings-connection [sessionId]="activeId()"></app-settings-connection>
+        <div class="border-t border-border-base pt-4">
+            <app-settings-params [sessionId]="activeId()"></app-settings-params>
+        </div>
+        }
+
+        <div class="border-t border-border-base pt-4 flex flex-col gap-3">
+            <span class="panel-title">Chat</span>
+            <label class="row-toggle">
+                <span class="text-[13px]">Streaming</span>
+                <app-toggle [checked]="config().streamMode" (checkedChange)="setOption('streamMode', $event)"></app-toggle>
+            </label>
+            <label class="row-toggle">
+                <span class="text-[13px]">Mandar historial</span>
+                <app-toggle [checked]="config().includeHistory" (checkedChange)="setOption('includeHistory', $event)"></app-toggle>
+            </label>
+            <p class="text-[11px] text-text-muted">Con streaming medís el primer token real. Sin historial, cada mensaje va solo.</p>
+        </div>
+    </div>
+</aside>

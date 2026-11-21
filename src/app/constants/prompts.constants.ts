@@ -6,16 +6,16 @@ export const QUICK_PROMPTS = [
         text: 'Responde únicamente: OK'
     },
     {
-        title: '🔢 Cálculo',
-        text: '¿Cuánto es 17 × 24? Responde solo el número.'
-    },
-    {
         title: '📋 Instrucciones',
         text: 'Escribe exactamente 3 bullets, máximo 8 palabras cada uno, sobre por qué usar streaming en un chat.'
     },
     {
-        title: '🧩 Lógica Inversa',
-        text: 'Hay 3 cajas: Roja, Azul y Verde. La caja Roja dice: "El oro no está aquí". La Azul dice: "El oro está en la caja Verde". La Verde dice: "El oro no está en la caja Azul". Sabiendo que EXACTAMENTE DOS de estas afirmaciones son FALSAS, determina dónde está el oro. Explica tu razonamiento paso a paso antes de dar la respuesta final.'
+        title: '🧩 Cajas',
+        text: 'Hay 3 cajas: Roja, Azul y Verde. Solo una contiene oro. Las inscripciones dicen: Roja: "El oro está en la caja Azul". Azul: "El oro no está en esta caja". Verde: "El oro no está en la caja Roja". Sabiendo que EXACTAMENTE UNA inscripción es verdadera, determina dónde está el oro y justifica paso a paso.'
+    },
+    {
+        title: '🐺 Lobo, cabra y lechuga',
+        text: 'Un granjero debe cruzar un lobo, una cabra y una lechuga en un bote que solo lleva al granjero y una cosa a la vez. Si deja solos al lobo y la cabra, el lobo come la cabra. Si deja solas a la cabra y la lechuga, la cabra come la lechuga. Da la secuencia mínima de viajes e indica qué lleva en cada uno.'
     },
     {
         title: '🔤 Conteo de "e"',
@@ -31,6 +31,6 @@ export const QUICK_PROMPTS = [
     },
     {
         title: '📊 Tabla Comparativa',
-        text: 'Crea una tabla comparativa detallada entre React, Angular y Vue. Incluye columnas para: Curva de aprendizaje, Rendimiento, Ecosistema y Casos de uso ideales.'
+        text: 'Crea una tabla comparativa entre React, Angular y Vue. Incluye columnas para: Curva de aprendizaje, Rendimiento, Ecosistema y Casos de uso ideales. Responde únicamente con la tabla, sin texto antes ni después.'
     }
 ];

@@ -2,15 +2,24 @@
 
 @layer base {
     body {
-        @apply bg-background text-text-main transition-colors antialiased duration-300;
-        font-family: var(--font-base);
+        @apply bg-background text-text-main antialiased font-sans;
+        font-feature-settings: 'ss01', 'cv11';
         text-rendering: optimizeLegibility;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    ::selection {
+        background: var(--accent-bg);
     }
 }
 
 ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 6px;
+    height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -18,11 +27,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    @apply bg-primary/50 rounded-full transition-colors;
+    @apply bg-border-strong rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary;
+    @apply bg-text-muted;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 
@@ -68,6 +84,22 @@
 
 .animate-fade-in {
     animation: fade-in 0.3s ease-out forwards;
+}
+
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-down {
+    animation: slide-down 0.22s ease-out both;
 }
 
 @media (max-width: 767px) {

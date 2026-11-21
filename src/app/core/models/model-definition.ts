@@ -21,6 +21,14 @@ export interface ModelPricing {
     verifiedAt: string;
 }
 
+/**
+ * - catalog: está en el catálogo local, sin verificar contra el proveedor.
+ * - available: el proveedor lo lista en /models.
+ * - deprecated: está en el catálogo pero el proveedor ya no lo lista.
+ * - discovered: lo lista el proveedor pero no tenemos metadata.
+ */
+export type ModelStatus = 'catalog' | 'available' | 'deprecated' | 'discovered';
+
 export interface ModelDefinition {
     id: string;
     label: string;
@@ -29,4 +37,9 @@ export interface ModelDefinition {
     contextWindow?: number;
     maxOutput?: number;
     pricing?: ModelPricing;
+    /** Parámetros, ej. { total: '1.4T', active: '48B' } para MoE. */
+    params?: { total?: string; active?: string };
+    /** Modelos viejos que se mantienen por compatibilidad pero no se recomiendan. */
+    legacy?: boolean;
+    status?: ModelStatus;
 }

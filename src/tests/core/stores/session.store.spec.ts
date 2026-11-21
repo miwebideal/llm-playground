@@ -18,7 +18,7 @@ describe('SessionStore', () => {
         localStorage.clear();
         const store = createStore();
         expect(store.sessions().length).toBe(2);
-        expect(store.sessions()[0].model).toBe('gpt-4o-mini');
+        expect(store.sessions()[0].model).toBe('gpt-5.4-mini');
     });
 
     it('migra error string a AppError', () => {

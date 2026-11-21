@@ -6,3 +6,4 @@ export * from './session.model';
 export * from './provider.model';
 export * from './config.model';
 export * from './model-definition';
+export * from './api.model';

@@ -14,8 +14,8 @@ export class SecretStoreService {
     private keyPromise: Promise<CryptoKey> | null = null;
 
     async encrypt(text: string): Promise<string> {
-        if (!text) return '';
-        if (!this.available()) return btoa(text);
+        // Sin WebCrypto (contexto no seguro) no guardamos nada: base64 no es cifrado.
+        if (!text || !this.available()) return '';
         const key = await this.getKey();
         const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
         const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(text));
@@ -23,10 +23,7 @@ export class SecretStoreService {
     }
 
     async decrypt(payload: string): Promise<string> {
-        if (!payload) return '';
-        if (!this.available()) {
-            try { return atob(payload); } catch { return ''; }
-        }
+        if (!payload || !this.available()) return '';
         const parsed = this.unpack(payload);
         if (!parsed) return '';
 
@@ -51,6 +48,7 @@ export class SecretStoreService {
     private async loadOrCreateKey(): Promise<CryptoKey> {
         const existing = await this.readKey();
         if (existing) return existing;
+        // Clave AES no exportable: ni el propio JS puede leer los bytes.
         const key = await crypto.subtle.generateKey(
             { name: 'AES-GCM', length: 256 },
             false,
@@ -60,10 +58,16 @@ export class SecretStoreService {
         return key;
     }
 
+    /** false si el navegador no puede cifrar: las keys viven sólo en memoria. */
+    canPersist(): boolean {
+        return this.available();
+    }
+
     private available(): boolean {
         return typeof crypto !== 'undefined' && !!crypto.subtle;
     }
 
+    /** Formato guardado: IV (12 bytes) + ciphertext, todo en base64. */
     private pack(iv: Uint8Array, data: Uint8Array): string {
         const combined = new Uint8Array(iv.length + data.length);
         combined.set(iv);
@@ -73,8 +77,7 @@ export class SecretStoreService {
         return btoa(binary);
     }
 
-    private unpack(payload: string): { iv: Uint8Array<ArrayBuffer>; data: Uint8Array<ArrayBuffer> } | null {
-        try {
+    private unpack(payload: string): { iv: Uint8Array<ArrayBuffer>; data: Uint8Array<ArrayBuffer> } | null {        try {
             const raw = Uint8Array.from(atob(payload), c => c.charCodeAt(0));
             if (raw.length <= IV_BYTES) return null;
 

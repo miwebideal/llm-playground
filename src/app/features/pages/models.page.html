@@ -1,0 +1,74 @@
+<!-- src/app/features/pages/models.page.html -->
+
+<div class="page-inner">
+    <header class="flex flex-wrap items-end gap-3">
+        <div>
+            <h1 class="page-title">Modelos</h1>
+            <p class="page-sub">Catálogo con precio, contexto y capacidades. La disponibilidad se verifica contra cada proveedor.</p>
+        </div>
+        <button type="button" class="btn ml-auto" (click)="refreshAll()" [disabled]="refreshing()">
+            <svg lucideRefreshCw class="w-3.5 h-3.5" [class.animate-spin]="refreshing()"></svg> Verificar disponibilidad
+        </button>
+    </header>
+
+    <!-- FILTERS -->
+    <div class="flex flex-wrap items-center gap-2">
+        <label class="relative flex-1 min-w-48">
+            <svg lucideSearch class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"></svg>
+            <input type="search" class="input-base pl-9" placeholder="Buscar modelo" [value]="query()" (input)="query.set($any($event.target).value)" aria-label="Buscar modelo">
+        </label>
+        <select class="input-base w-auto cursor-pointer" [value]="provider()" (change)="provider.set($any($event.target).value)" aria-label="Filtrar por proveedor">
+            <option value="all">Todos los proveedores</option>
+            @for (p of presets; track p.id) { <option [value]="p.id">{{ p.name }}</option> }
+        </select>
+        <label class="flex items-center gap-2 text-xs text-text-muted cursor-pointer">
+            <input type="checkbox" [checked]="showDeprecated()" (change)="showDeprecated.set(!showDeprecated())" class="accent-(--primary)">
+            Mostrar legacy y deprecados ({{ hiddenCount() }})
+        </label>
+    </div>
+
+    @if (!verifiedProviders()) {
+    <p class="text-xs text-text-muted -mt-2">Todavía no se verificó ningún proveedor: los modelos se muestran como “catálogo”.</p>
+    }
+
+    <!-- CARDS -->
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        @for (model of models(); track model.providerId + model.id) {
+        <article class="card p-4 flex flex-col gap-3">
+            <div class="flex items-start gap-2">
+                <div class="min-w-0">
+                    <h2 class="font-semibold tracking-tight truncate" [title]="model.id">{{ model.label }}</h2>
+                    <p class="text-xs text-text-muted">{{ providerName(model.providerId) }}</p>
+                </div>
+                <span class="ml-auto shrink-0">
+                    @switch (model.status) {
+                    @case ('available') { <span class="pill pill-success">disponible</span> }
+                    @case ('deprecated') { <span class="pill pill-warning">no listado</span> }
+                    @default { <span class="pill">catálogo</span> }
+                    }
+                </span>
+            </div>
+
+            <dl class="grid grid-cols-3 gap-2 mono text-xs">
+                <div><dt class="text-text-muted text-[11px] font-sans">Contexto</dt><dd>{{ ctx(model.contextWindow) ?? '—' }}</dd></div>
+                <div><dt class="text-text-muted text-[11px] font-sans">In / out 1M</dt><dd>{{ model.pricing ? '$' + model.pricing.input + '/' + model.pricing.output : '—' }}</dd></div>
+                <div><dt class="text-text-muted text-[11px] font-sans">Params</dt><dd>{{ model.params?.total ?? '—' }}{{ model.params?.active ? ' · ' + model.params?.active + ' act.' : '' }}</dd></div>
+            </dl>
+
+            <div class="flex flex-wrap gap-1.5">
+                @if (model.capabilities.reasoning) { <span class="pill">razonamiento</span> }
+                @if (model.capabilities.vision) { <span class="pill">visión</span> }
+                @if (model.capabilities.jsonMode) { <span class="pill">JSON</span> }
+                @if (model.legacy) { <span class="pill pill-warning">legacy</span> }
+            </div>
+
+
+            @if (model.pricing) {
+            <p class="text-[10px] text-text-muted mt-auto pt-2 border-t border-border-base">Precio verificado {{ model.pricing.verifiedAt }}</p>
+            }
+        </article>
+        } @empty {
+        <p class="text-sm text-text-muted col-span-full">No hay modelos que coincidan.</p>
+        }
+    </div>
+</div>

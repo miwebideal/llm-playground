@@ -2,7 +2,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ChatSession, GlobalConfig, Message } from '../models';
-import { ApiMessage } from '../../models/api.types';
+import { ApiMessage } from '../models';
 import { ModelRegistryService } from '../registry/model-registry.service';
 
 @Injectable({ providedIn: 'root' })

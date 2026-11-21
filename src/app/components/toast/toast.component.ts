@@ -2,12 +2,12 @@
 
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ToastService, ToastType } from '../../core/services/toast.service';
-import { LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideX, LucideCheckCheck } from '@lucide/angular';
+import { LucideCircleExclamationPoint, LucideTriangleExclamationPoint, LucideInfo, LucideX, LucideCheckCheck } from '@lucide/angular';
 
 @Component({
     selector: 'app-toast',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [LucideCircleAlert, LucideTriangleAlert, LucideInfo, LucideX, LucideCheckCheck],
+    imports: [LucideCircleExclamationPoint, LucideTriangleExclamationPoint, LucideInfo, LucideX, LucideCheckCheck],
     templateUrl: './toast.component.html'
 })
 export class ToastComponent {

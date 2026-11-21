@@ -87,9 +87,8 @@ describe('LlmApiService', () => {
         expect(error.hint).toBeTruthy();
     });
 
-    it('extrae contenido OpenAI y Gemini', () => {
+    it('extrae contenido OpenAI', () => {
         expect(service.extractContent({ choices: [{ message: { content: 'hola' } }] })).toBe('hola');
-        expect(service.extractContent({ candidates: [{ content: { parts: [{ text: 'chau' }] } }] })).toBe('chau');
         expect(service.extractContent(null)).toBe('');
     });
 
